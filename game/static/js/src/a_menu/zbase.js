@@ -36,12 +36,11 @@ class GameMenu {
         let outer = this;
         this.$pass_mode.click(function(){
             outer.hide();
-            outer.root.playground.show();
+            outer.pass_menu = new PassMode(outer);
         });
         this.$grade_mode.click(function(){
-            console.log('YES');
             outer.hide();
-            outer.root.playground.show();
+            outer.root.playground.show("grade");
         });
         this.$explain.click(function(){
             console.log('YES');
