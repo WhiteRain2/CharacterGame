@@ -17,8 +17,8 @@ class PlayGround {
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
-        if (mode === "pass") {
-           // this.pass_mode = new PassMode(this);
+        this.player = new Player(this, this.width/2-50, this.height/2-50, 100, 100,5, "me", "../../../static/material/images/me.png");
+        if (mode === "easy") {
         }
         else {
         }

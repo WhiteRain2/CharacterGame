@@ -227,19 +227,45 @@ class GameMap extends GameObject {
 
 }
 class Player extends GameObject {
-    constructor(playground, x, y, radius, who) {
+    constructor(playground, x, y, w, h, speed, who, photo) {
         // who is easy common difficult endless me
         super();
         this.playground = playground;
         this.x = x;
         this.y = y;
-        this.radius = radius;
+        this.w = w;
+        this.h = h;
+        this.speed = speed;
         this.who = who;
         this.ctx = this.playground.game_map.ctx;
+        this.photo = photo;
+        this.img = new Image();
+        this.img.src = this.photo;
+        let outer = this;
+        this.img.onload = function() {
+            outer.ctx.drawImage(outer.img, outer.x, outer.y, outer.w, outer.h);
+        }
+        this.start();
+    }
+
+    start() {
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        this.playground.$playground.mousedown(function(e){
+            if (e.which === 1) {
+                console.log(e.clientX);
+            }
+        });
+    }
+
+    update() {
+        this.render();
     }
 
     render() {
-
+       this.img.onload()
     }
 
 }
@@ -262,8 +288,8 @@ class PlayGround {
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
-        if (mode === "pass") {
-           // this.pass_mode = new PassMode(this);
+        this.player = new Player(this, this.width/2-50, this.height/2-50, 100, 100, 0, "me", "../../../static/material/images/me.png");
+        if (mode === "easy") {
         }
         else {
         }
