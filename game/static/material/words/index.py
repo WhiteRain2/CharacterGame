@@ -48,25 +48,22 @@ def ParseAndSave(images, audio, ct, path):
             pim.write(GetContent(item[0]))
         with open('{}/{}.mp3'.format(path, ct), 'wb') as pa:
             pa.write(GetContent(item[1]))
-        ct += 1
-    return ct
+
 
 
 def MainFile(fname):
     words = GetWords(fname)
-    path = 'difficult'
+    path = './difficult'
     if fname == 'wordsEasy.txt':
-        path = 'common'
-    k = 1
-    ct = 0
+        path = './common'
+    ct = 1
     for wordSame in words:
-        newPath = './{}/{}'.format(path, k)
-        k += 1
-        os.mkdir(newPath)
         for word in wordSame:
             images, audio = GetUrl(word)
-            ct = ParseAndSave(images, audio, ct, newPath)
-        ct = 0
+            ParseAndSave(images, audio, ct, path)
+            ct += 1
+            if ct >= 2000:
+                return
 
 
 if __name__ == '__main__':

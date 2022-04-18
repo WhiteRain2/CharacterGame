@@ -19,7 +19,6 @@ class Water extends GameObject {
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.start();
     }
 
     start() {
@@ -36,12 +35,12 @@ class Water extends GameObject {
         this.y += this.vy * moved;
         this.move_length -= moved;
 
-  //      for (let i = 0; i < this.playground.players.length; i ++ ) {
-  //          let player = this.playground.players[i];
-  //          if (this.player !== player && this.is_collision(player)) {
-  //              this.attack(player);
-  //          }
-  //      }
+        for (let i = 0; i < this.playground.words.length; i ++ ) {
+            let word = this.playground.words[i];
+            if (this.is_collision(word)) {
+                this.attack(word);
+            }
+        }
 
         this.render();
     }
@@ -52,17 +51,15 @@ class Water extends GameObject {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    is_collision(player) {
-        let distance = this.get_dist(this.x, this.y, player.x, player.y);
-        if (distance < this.radius + player.radius)
-            return true;
-        return false;
+    is_collision(word) {
+        var d = this.get_dist(this.x-this.w/2, this.y-this.h/2, word.x-word.w/2, word.y-word.h/2);
+        if (d <= this.w/2 + word.w/2) return true;
+        else return false;
     }
 
-    attack(player) {
-        let angle = Math.atan2(player.y - this.y, player.x - this.x);
-        player.is_attacked(angle, this.damage);
+    attack(word) {
         this.destroy();
+        word.is_attacked();
     }
 
     render() {

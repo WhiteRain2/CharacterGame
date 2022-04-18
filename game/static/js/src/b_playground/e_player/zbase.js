@@ -21,7 +21,6 @@ class Player extends GameObject {
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.start();
     }
 
     start() {
@@ -48,13 +47,13 @@ class Player extends GameObject {
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
         });
-
         this.playground.$playground.mousedown(function(e){
+            const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
-                outer.move_to(e.clientX, e.clientY);
+                outer.move_to(e.clientX-rect.left, e.clientY-rect.top);
             }
             else if (e.which === 3) {
-                outer.shoot(e.clientX, e.clientY);
+                outer.shoot(e.clientX-rect.left, e.clientY-rect.top);
             }
         });
     }

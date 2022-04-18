@@ -211,7 +211,6 @@ class Water extends GameObject {
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.start();
     }
 
     start() {
@@ -228,12 +227,12 @@ class Water extends GameObject {
         this.y += this.vy * moved;
         this.move_length -= moved;
 
-  //      for (let i = 0; i < this.playground.players.length; i ++ ) {
-  //          let player = this.playground.players[i];
-  //          if (this.player !== player && this.is_collision(player)) {
-  //              this.attack(player);
-  //          }
-  //      }
+        for (let i = 0; i < this.playground.words.length; i ++ ) {
+            let word = this.playground.words[i];
+            if (this.is_collision(word)) {
+                this.attack(word);
+            }
+        }
 
         this.render();
     }
@@ -244,17 +243,15 @@ class Water extends GameObject {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    is_collision(player) {
-        let distance = this.get_dist(this.x, this.y, player.x, player.y);
-        if (distance < this.radius + player.radius)
-            return true;
-        return false;
+    is_collision(word) {
+        var d = this.get_dist(this.x-this.w/2, this.y-this.h/2, word.x-word.w/2, word.y-word.h/2);
+        if (d <= this.w/2 + word.w/2) return true;
+        else return false;
     }
 
-    attack(player) {
-        let angle = Math.atan2(player.y - this.y, player.x - this.x);
-        player.is_attacked(angle, this.damage);
+    attack(word) {
         this.destroy();
+        word.is_attacked();
     }
 
     render() {
@@ -321,7 +318,6 @@ class Player extends GameObject {
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.start();
     }
 
     start() {
@@ -348,13 +344,13 @@ class Player extends GameObject {
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
         });
-
         this.playground.$playground.mousedown(function(e){
+            const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
-                outer.move_to(e.clientX, e.clientY);
+                outer.move_to(e.clientX-rect.left, e.clientY-rect.top);
             }
             else if (e.which === 3) {
-                outer.shoot(e.clientX, e.clientY);
+                outer.shoot(e.clientX-rect.left, e.clientY-rect.top);
             }
         });
     }
@@ -391,6 +387,104 @@ class Player extends GameObject {
     }
 
 }
+class Word extends GameObject{
+    constructor(playground, x, y, w, h, speed, mode, id) {
+        super();
+        this.playground = playground;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.speed = speed;
+        this.vx = 0;
+        this.vy = 0;
+        this.ctx = this.playground.game_map.ctx;
+        this.move_length = 0;
+        this.eps = 0.1;
+        this.img = new Image();
+        this.path = `../../../static/material/words/${mode}/${id}`;
+        this.img.src = this.path+'.png';
+        let outer = this;
+        this.img.onload = function() {
+            outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
+        }
+        this.mode = mode;
+        this.id = id;
+    }
+
+    start() {
+        let tx = Math.random() * this.playground.width;
+        let ty = Math.random() * this.playground.height;
+        this.move_to(tx, ty);
+
+    }
+
+    get_dist(x1, y1, x2, y2) {
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    move_to(tx, ty) {
+        this.move_length = this.get_dist(this.x, this.y, tx, ty);
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        this.vx = Math.cos(angle);
+        this.vy = Math.sin(angle);
+    }
+
+    is_attacked() {
+        for (let i = 0; i < this.playground.words.length; i ++ ) {
+            if (this.playground.words[i] === this) {
+                this.playground.words.splice(i, 1);
+            }
+        }
+
+        this.destroy();
+
+    }
+
+    exhibition(x, y, w, h, photo) {
+        var img = new Image();
+        img.src = photo;
+        let outer = this;
+        img.onload = function() {
+            outer.ctx.drawImage(img, x-w/2, y-h/2, outer.w*10, outer.h*10);
+        }
+        img.onload();
+    }
+
+    on_destroy() {
+        var audio_html = $(`<audio id="audio" controls="controls" src=${this.path}.mp3></audio>`);
+        this.playground.$playground.append(audio_html);
+        var audio = $("#audio")[0];
+        audio.play();
+        let outer = this;
+        audio.addEventListener('ended', function () {
+            outer.exhibition(outer.x, outer.y, outer.w, outer.h, `${outer.path}.png`);
+            audio_html.remove();
+        }, false);
+    }
+
+    update(){
+        if (this.move_length < this.eps) {
+            this.move_length = 0;
+            this.vx = this.vy = 0;
+            let tx = Math.random() * this.playground.width;
+            let ty = Math.random() * this.playground.height;
+            this.move_to(tx, ty);
+        }
+        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += this.vx * moved;
+        this.y += this.vy * moved;
+        this.move_length -= moved;
+
+        this.render();
+    }
+
+    render() {
+        this.img.onload();
+    }
+}
 class PlayGround {
     constructor(root) {
         this.root = root;
@@ -404,16 +498,33 @@ class PlayGround {
     start() {
     }
 
+    randomNum(minNum,maxNum){ 
+        switch(arguments.length){ 
+            case 1: 
+                return parseInt(Math.random()*minNum+1,10); 
+                break; 
+            case 2: 
+                return parseInt(Math.random()*(maxNum-minNum+1)+minNum,10); 
+                break; 
+            default: 
+                return 0; 
+                break; 
+        } 
+    } 
+
     show(mode) {
         this.$playground.show();
-        
+
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.player = new Player(this, this.width/2, this.height/2, 100, 100, this.width*0.12, "me", "../../../static/material/images/me.png");
-        console.log(this.width);
-        console.log(this.height);
-        if (mode === "easy") {
+        this.words = [];
+        if (mode === "common") {
+            for (var i=0; i<10; i++) {
+                var r = this.randomNum(1, 1999);
+                this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
+            }
         }
         else {
         }
