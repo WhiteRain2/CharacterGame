@@ -190,6 +190,78 @@ let GAME_ANIMATION = function(timestamp) {
 
 requestAnimationFrame(GAME_ANIMATION);
 
+class Water extends GameObject {
+    constructor(playground, x, y, w, h, vx, vy, photo, speed, move_length, damage) {
+        super();
+        this.playground = playground;
+        this.ctx = this.playground.game_map.ctx;
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.w = w;
+        this.h = h;
+        this.img = new Image();
+        this.img.src = photo;
+        this.speed = speed;
+        this.move_length = move_length;
+        this.damage = damage;
+        this.eps = 0.1;
+        let outer = this;
+        this.img.onload = function() {
+            outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
+        }
+        this.start();
+    }
+
+    start() {
+    }
+
+    update() {
+        if (this.move_length < this.eps) {
+            this.destroy();
+            return false;
+        }
+
+        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+        this.x += this.vx * moved;
+        this.y += this.vy * moved;
+        this.move_length -= moved;
+
+  //      for (let i = 0; i < this.playground.players.length; i ++ ) {
+  //          let player = this.playground.players[i];
+  //          if (this.player !== player && this.is_collision(player)) {
+  //              this.attack(player);
+  //          }
+  //      }
+
+        this.render();
+    }
+
+    get_dist(x1, y1, x2, y2) {
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    is_collision(player) {
+        let distance = this.get_dist(this.x, this.y, player.x, player.y);
+        if (distance < this.radius + player.radius)
+            return true;
+        return false;
+    }
+
+    attack(player) {
+        let angle = Math.atan2(player.y - this.y, player.x - this.x);
+        player.is_attacked(angle, this.damage);
+        this.destroy();
+    }
+
+    render() {
+        this.img.onload();
+    }
+}
+
 class GameMap extends GameObject {
     constructor(playground) {
         super();
@@ -220,7 +292,7 @@ class GameMap extends GameObject {
 
 
     render() {
-        this.ctx.fillStyle = "rgba(248, 239, 230, 0.2)";
+        this.ctx.fillStyle = "rgba(248, 239, 230)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
     }
@@ -235,15 +307,19 @@ class Player extends GameObject {
         this.y = y;
         this.w = w;
         this.h = h;
+        this.vx = 0;
+        this.vy = 0;
         this.speed = speed;
         this.who = who;
         this.ctx = this.playground.game_map.ctx;
         this.photo = photo;
+        this.move_length = 0;
+        this.eps = 0.1;
         this.img = new Image();
         this.img.src = this.photo;
         let outer = this;
         this.img.onload = function() {
-            outer.ctx.drawImage(outer.img, outer.x, outer.y, outer.w, outer.h);
+            outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
         this.start();
     }
@@ -252,20 +328,66 @@ class Player extends GameObject {
         this.add_listening_events();
     }
 
+    get_dist(x1, y1, x2, y2) {
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    move_to(tx, ty) {
+        this.move_length = this.get_dist(this.x, this.y, tx, ty);
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        this.vx = Math.cos(angle);
+        this.vy = Math.sin(angle);
+    }
+
+
     add_listening_events() {
+        let outer = this;
+        // close the menu of right
+        this.playground.game_map.$canvas.on("contextmenu", function() {
+            return false;
+        });
+
         this.playground.$playground.mousedown(function(e){
             if (e.which === 1) {
-                console.log(e.clientX);
+                outer.move_to(e.clientX, e.clientY);
+            }
+            else if (e.which === 3) {
+                outer.shoot(e.clientX, e.clientY);
             }
         });
     }
 
-    update() {
+    shoot(tx, ty) {
+        let x = this.x-this.w/2, y = this.y-this.h/2;
+        let w = this.w * 0.2, h = this.h * 0.2;
+        let angle = Math.atan2(ty - y, tx - x);
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        let photo = "../../../static/material/images/water.png";
+        let speed = this.playground.height * 0.5;
+        let move_length = this.playground.height * 1;
+        new Water(this.playground, this.x, this.y, w, h, vx, vy, photo, speed, move_length, this.playground.height * 0.01);
+    }
+
+
+
+    update() { 
+        if (this.move_length < this.eps) {
+            this.move_length = 0;
+            this.vx = this.vy = 0;
+        }
+        else {
+            let moved = Math.min(this.speed * this.timedelta / 1000, this.move_length);
+            this.x += this.vx * moved;
+            this.y += this.vy * moved;
+            this.move_length -= moved;
+        }
         this.render();
     }
 
     render() {
-       this.img.onload()
+        this.img.onload()
     }
 
 }
@@ -288,7 +410,9 @@ class PlayGround {
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
-        this.player = new Player(this, this.width/2-50, this.height/2-50, 100, 100, 0, "me", "../../../static/material/images/me.png");
+        this.player = new Player(this, this.width/2, this.height/2, 100, 100, this.width*0.12, "me", "../../../static/material/images/me.png");
+        console.log(this.width);
+        console.log(this.height);
         if (mode === "easy") {
         }
         else {

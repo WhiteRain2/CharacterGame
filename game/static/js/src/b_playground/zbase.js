@@ -17,7 +17,9 @@ class PlayGround {
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
-        this.player = new Player(this, this.width/2-50, this.height/2-50, 100, 100,5, "me", "../../../static/material/images/me.png");
+        this.player = new Player(this, this.width/2, this.height/2, 100, 100, this.width*0.12, "me", "../../../static/material/images/me.png");
+        console.log(this.width);
+        console.log(this.height);
         if (mode === "easy") {
         }
         else {
