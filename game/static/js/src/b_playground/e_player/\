@@ -97,7 +97,7 @@ class Player extends GameObject {
             outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, 500, 500);
         }
         img.onload();
-        for (var i=0; i<500000; i++);
+   //     for (val i=0; i<10000; i++) {}
         this.end = true;
     }
 
@@ -109,7 +109,7 @@ class Player extends GameObject {
         if (this.words.length === 0) {
             this.game_over(true);
         }
-        if (this.te > 60)
+        if (this.te > 120)
             for (var i = 0; i<this.words.length; i++) {
                 if (this.is_collision(this.words[i])) {
                     this.life -= 1;

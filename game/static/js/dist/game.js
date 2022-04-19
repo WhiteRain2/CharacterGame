@@ -58,7 +58,7 @@ class PassMode {
         this.$pass_menu.show();
     }
     hide() {
-        this.$pass_menu.hide();
+        this.$pass_menu.remove();
     }
 }
 class GameMenu {
@@ -317,6 +317,7 @@ class Player extends GameObject {
         this.img.src = this.photo;
         this.end = false;
         let outer = this;
+        this.te = 0;  //set time for attached
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
@@ -354,10 +355,9 @@ class Player extends GameObject {
             return false;
         });
         this.playground.$playground.mousedown(function(e){
-            if (this.end) {
-                outer.playground.hide();
-                outer.playground.game_map.$canvas.remove();
-                outer.playground.root.menu.show();
+            if (outer.end) {
+                location.reload();
+                return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
@@ -383,30 +383,36 @@ class Player extends GameObject {
     }
 
     game_over(r) {
-        var s = ``;
-        if (r) {
-            s += `胜利!`;
+        let photo = "../../../static/material/images/";
+        if (r) photo += "up.png";
+        else photo += "down.png";
+        var img = new Image();
+        img.src = photo;
+        let outer = this;
+
+        img.onload = function() {
+            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, 500, 500);
         }
-        else {
-            s += `胜败乃兵家常事，加油!`;
-        }
-        this.font = "20px";
-        this.ctx.fillText(s, 10, 50);
+        img.onload();
+        for (var i=0; i<500000; i++);
         this.end = true;
     }
 
     update() {
+        this.te ++;
         if (this.life === 0) {
-            this.game_over(0);
+            this.game_over(false);
         }
         if (this.words.length === 0) {
-            this.game_over(1);
+            this.game_over(true);
         }
-        for (var i = 0; i<this.words.length; i++) {
-            if (this.is_collision(this.words[i])) {
-                this.life -= 1;
+        if (this.te > 60)
+            for (var i = 0; i<this.words.length; i++) {
+                if (this.is_collision(this.words[i])) {
+                    this.life -= 1;
+                    this.te = 0;
+                }
             }
-        }
         // player moved
         if (this.move_length < this.eps) {
             this.move_length = 0;

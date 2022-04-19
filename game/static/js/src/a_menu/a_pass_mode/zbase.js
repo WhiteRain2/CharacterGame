@@ -58,6 +58,6 @@ class PassMode {
         this.$pass_menu.show();
     }
     hide() {
-        this.$pass_menu.hide();
+        this.$pass_menu.remove();
     }
 }
