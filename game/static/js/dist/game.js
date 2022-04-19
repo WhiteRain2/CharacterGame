@@ -308,16 +308,20 @@ class Player extends GameObject {
         this.vy = 0;
         this.speed = speed;
         this.who = who;
+        this.words = this.playground.words;
         this.ctx = this.playground.game_map.ctx;
         this.photo = photo;
         this.move_length = 0;
         this.eps = 0.1;
         this.img = new Image();
         this.img.src = this.photo;
+        this.end = false;
         let outer = this;
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
+        this.skill_coldtime = 1.5;
+        this.life = 3;
     }
 
     start() {
@@ -337,6 +341,11 @@ class Player extends GameObject {
         this.vy = Math.sin(angle);
     }
 
+    is_collision(word) {
+        var d = this.get_dist(this.x-this.w/2, this.y-this.h/2, word.x-word.w/2, word.y-word.h/2);
+        if (d <= this.w/2 + word.w/2) return true;
+        else return false;
+    }
 
     add_listening_events() {
         let outer = this;
@@ -345,12 +354,18 @@ class Player extends GameObject {
             return false;
         });
         this.playground.$playground.mousedown(function(e){
+            if (this.end) {
+                outer.playground.hide();
+                outer.playground.game_map.$canvas.remove();
+                outer.playground.root.menu.show();
+            }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
                 outer.move_to(e.clientX-rect.left, e.clientY-rect.top);
             }
             else if (e.which === 3) {
-                outer.shoot(e.clientX-rect.left, e.clientY-rect.top);
+                if (outer.skill_coldtime <= outer.eps)
+                    outer.shoot(e.clientX-rect.left, e.clientY-rect.top);
             }
         });
     }
@@ -363,12 +378,36 @@ class Player extends GameObject {
         let photo = "../../../static/material/images/water.png";
         let speed = this.playground.height * 0.5;
         let move_length = this.playground.height * 1;
+        this.skill_coldtime = 1.5;
         new Water(this.playground, this.x, this.y, w, h, vx, vy, photo, speed, move_length, this.playground.height * 0.01);
     }
 
+    game_over(r) {
+        var s = ``;
+        if (r) {
+            s += `胜利!`;
+        }
+        else {
+            s += `胜败乃兵家常事，加油!`;
+        }
+        this.font = "20px";
+        this.ctx.fillText(s, 10, 50);
+        this.end = true;
+    }
 
-
-    update() { 
+    update() {
+        if (this.life === 0) {
+            this.game_over(0);
+        }
+        if (this.words.length === 0) {
+            this.game_over(1);
+        }
+        for (var i = 0; i<this.words.length; i++) {
+            if (this.is_collision(this.words[i])) {
+                this.life -= 1;
+            }
+        }
+        // player moved
         if (this.move_length < this.eps) {
             this.move_length = 0;
             this.vx = this.vy = 0;
@@ -379,6 +418,26 @@ class Player extends GameObject {
             this.y += this.vy * moved;
             this.move_length -= moved;
         }
+        // skill CD
+        if (this.skill_coldtime > this.eps)
+            this.skill_coldtime -= this.timedelta / 1000;
+        // CD image
+        this.ctx.beginPath();
+        this.ctx.arc(this.playground.width*0.95, this.playground.height*0.1, 50*this.skill_coldtime, 0, 2*Math.PI);
+        this.ctx.fillstyle = "red";
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.closePath();
+        // lift show
+        for (var i=0; i<this.life; i++) {
+            this.ctx.beginPath();
+            this.ctx.arc(this.playground.width*(0.7+i*0.1), this.playground.height*0.9, 25, 0, 2*Math.PI);
+            this.ctx.fillstyle = "red";
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
+
         this.render();
     }
 
@@ -439,8 +498,7 @@ class Word extends GameObject{
             }
         }
 
-        this.destroy();
-
+       this.destroy();
     }
 
     exhibition(x, y, w, h, photo) {
@@ -454,7 +512,7 @@ class Word extends GameObject{
     }
 
     on_destroy() {
-        var audio_html = $(`<audio id="audio" controls="controls" src=${this.path}.mp3></audio>`);
+        var audio_html = $(`<audio id="audio" src=${this.path}.mp3></audio>`);
         this.playground.$playground.append(audio_html);
         var audio = $("#audio")[0];
         audio.play();
@@ -514,12 +572,11 @@ class PlayGround {
 
     show(mode) {
         this.$playground.show();
-
+        this.words = [];
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.player = new Player(this, this.width/2, this.height/2, 100, 100, this.width*0.12, "me", "../../../static/material/images/me.png");
-        this.words = [];
         if (mode === "common") {
             for (var i=0; i<10; i++) {
                 var r = this.randomNum(1, 1999);

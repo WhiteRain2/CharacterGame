@@ -50,8 +50,7 @@ class Word extends GameObject{
             }
         }
 
-        this.destroy();
-
+       this.destroy();
     }
 
     exhibition(x, y, w, h, photo) {
@@ -65,7 +64,7 @@ class Word extends GameObject{
     }
 
     on_destroy() {
-        var audio_html = $(`<audio id="audio" controls="controls" src=${this.path}.mp3></audio>`);
+        var audio_html = $(`<audio id="audio" src=${this.path}.mp3></audio>`);
         this.playground.$playground.append(audio_html);
         var audio = $("#audio")[0];
         audio.play();

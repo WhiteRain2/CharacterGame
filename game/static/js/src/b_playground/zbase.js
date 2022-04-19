@@ -27,12 +27,11 @@ class PlayGround {
 
     show(mode) {
         this.$playground.show();
-
+        this.words = [];
         this.width = this.$playground.width();
         this.height = this.$playground.height();
         this.game_map = new GameMap(this);
         this.player = new Player(this, this.width/2, this.height/2, 100, 100, this.width*0.12, "me", "../../../static/material/images/me.png");
-        this.words = [];
         if (mode === "common") {
             for (var i=0; i<10; i++) {
                 var r = this.randomNum(1, 1999);
