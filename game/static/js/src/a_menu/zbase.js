@@ -3,6 +3,7 @@ class GameMenu {
         this.root = root;
         this.$menu = $(`
 <div class="game-menu">
+    <audio class="game-menu-audio" id="menu_audio" autoplay="autoplay" src="http://music.163.com/song/media/outer/url?id=1853863650.mp3"></audio>
     <div class="game-menu-field">
         <div class="game-menu-field-item game-menu-field-item-pass-mode">
             关卡模式
@@ -22,7 +23,9 @@ class GameMenu {
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
-
+        this.menu_audio = $('#menu_audio')[0];
+        this.menu_audio.volume = 0.1;
+        this.src = false;
         this.start();
     }
 
@@ -34,21 +37,28 @@ class GameMenu {
 
    add_listening_events() {
         let outer = this;
-        this.$pass_mode.click(function(){
-            outer.hide();
-            outer.pass_menu = new PassMode(outer);
-        });
-        this.$grade_mode.click(function(){
-            outer.hide();
-            outer.root.playground.show("grade");
-        });
-        this.$explain.click(function(){
-            console.log('YES');
+       this.$menu.click(function() {
+           if (!outer.src) {
+               outer.menu_audio.volume = 0.1;
+               outer.menu_audio.play();
+               outer.src = true;
+           }
+       });
+       this.$pass_mode.click(function(){
+           outer.hide();
+           outer.pass_menu = new PassMode(outer);
+       });
+       this.$grade_mode.click(function(){
+           outer.hide();
+           outer.root.playground.show("grade");
+       });
+       this.$explain.click(function(){
+           console.log('YES');
            // outer.root.settings.logout_on_remote();
-        });
-    }
+       });
+   }
 
-	show() {  // 显示menu界面
+    show() {  // 显示menu界面
         this.$menu.show();
     }
 

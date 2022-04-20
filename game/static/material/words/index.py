@@ -51,21 +51,21 @@ def ParseAndSave(images, audio, ct, path):
 
 
 
-def MainFile(fname):
-    words = GetWords(fname)
-    path = './difficult'
-    if fname == 'wordsEasy.txt':
-        path = './common'
+def MainFile():
+    words = GetWords('wordsEasy.txt')
+    path = './easy'
     ct = 1
     for wordSame in words:
         for word in wordSame:
             images, audio = GetUrl(word)
             ParseAndSave(images, audio, ct, path)
             ct += 1
-            if ct >= 2000:
-                return
+            if ct >= 600:
+                words = GetWords('wordsHard.txt')
+                path = './difficult';
+            if ct >= 700:
+                return;
 
 
 if __name__ == '__main__':
-    MainFile('wordsEasy.txt')
-    MainFile('wordsHard.txt')
+    MainFile()

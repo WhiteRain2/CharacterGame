@@ -66,6 +66,7 @@ class GameMenu {
         this.root = root;
         this.$menu = $(`
 <div class="game-menu">
+    <audio class="game-menu-audio" id="menu_audio" autoplay="autoplay" src="http://music.163.com/song/media/outer/url?id=1853863650.mp3"></audio>
     <div class="game-menu-field">
         <div class="game-menu-field-item game-menu-field-item-pass-mode">
             关卡模式
@@ -85,7 +86,9 @@ class GameMenu {
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
-
+        this.menu_audio = $('#menu_audio')[0];
+        this.menu_audio.volume = 0.1;
+        this.src = false;
         this.start();
     }
 
@@ -97,21 +100,28 @@ class GameMenu {
 
    add_listening_events() {
         let outer = this;
-        this.$pass_mode.click(function(){
-            outer.hide();
-            outer.pass_menu = new PassMode(outer);
-        });
-        this.$grade_mode.click(function(){
-            outer.hide();
-            outer.root.playground.show("grade");
-        });
-        this.$explain.click(function(){
-            console.log('YES');
+       this.$menu.click(function() {
+           if (!outer.src) {
+               outer.menu_audio.volume = 0.1;
+               outer.menu_audio.play();
+               outer.src = true;
+           }
+       });
+       this.$pass_mode.click(function(){
+           outer.hide();
+           outer.pass_menu = new PassMode(outer);
+       });
+       this.$grade_mode.click(function(){
+           outer.hide();
+           outer.root.playground.show("grade");
+       });
+       this.$explain.click(function(){
+           console.log('YES');
            // outer.root.settings.logout_on_remote();
-        });
-    }
+       });
+   }
 
-	show() {  // 显示menu界面
+    show() {  // 显示menu界面
         this.$menu.show();
     }
 
@@ -231,6 +241,7 @@ class Water extends GameObject {
             let word = this.playground.words[i];
             if (this.is_collision(word)) {
                 this.attack(word);
+                break;
             }
         }
 
@@ -289,7 +300,7 @@ class GameMap extends GameObject {
 
 
     render() {
-        this.ctx.fillStyle = "rgba(248, 239, 230)";
+        this.ctx.fillStyle = "rgba(248, 239, 230, 1)";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
     }
@@ -300,6 +311,7 @@ class Player extends GameObject {
         // who is easy common difficult endless me
         super();
         this.playground = playground;
+        this.mode = this.playground.mode;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -316,13 +328,17 @@ class Player extends GameObject {
         this.img = new Image();
         this.img.src = this.photo;
         this.end = false;
+        this.end_buff = 0;
         let outer = this;
         this.te = 0;  //set time for attached
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         this.life = 3;
+        //grade
+        this.init = 5;
+        this.score = 0;
     }
 
     start() {
@@ -356,8 +372,10 @@ class Player extends GameObject {
         });
         this.playground.$playground.mousedown(function(e){
             if (outer.end) {
-                location.reload();
-                return;
+                if (outer.end_buff > 180)
+                    location.reload();
+                else
+                    return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
@@ -376,13 +394,14 @@ class Player extends GameObject {
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let photo = "../../../static/material/images/water.png";
-        let speed = this.playground.height * 0.5;
+        let speed = this.playground.height * 0.7;
         let move_length = this.playground.height * 1;
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         new Water(this.playground, this.x, this.y, w, h, vx, vy, photo, speed, move_length, this.playground.height * 0.01);
     }
 
     game_over(r) {
+        this.end_buff ++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
         else photo += "down.png";
@@ -391,20 +410,53 @@ class Player extends GameObject {
         let outer = this;
 
         img.onload = function() {
-            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, 500, 500);
+            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, outer.playground.width/3, outer.playground.height/2);
         }
         img.onload();
-        for (var i=0; i<500000; i++);
         this.end = true;
     }
 
+    Load_CDimg(x, y, r) {
+        let photo = "../../../static/material/images/cdImg.png";
+        var img = new Image();
+        img.src = photo;
+        let outer = this;
+        img.onload = function() {
+            outer.ctx.drawImage(img, x, y, r, r);
+        }
+        img.onload();
+    }
+
+
+    grade_mode() {
+        for (let i=0; i<this.init; i++) {
+            var r = this.playground.randomNum(1, 900);
+            var cur_mode = "common";
+            this.words.push(new Word(this.playground, 10, 10, 50,50, this.playground.width*0.12, cur_mode, r));
+            cur_mode = "different";
+        }
+        this.init += 5;
+    }
+
     update() {
+        if (this.mode === "grade") {
+            var s = `当前得分: ${this.score}`;
+            this.ctx.font = "normal normal 20px Verdana";
+            this.ctx.fillText("haha", this.playground.width/2, this.playground.height*0.2, this.playground.width);
+        }
         this.te ++;
         if (this.life === 0) {
+            this.win = false;
             this.game_over(false);
         }
         if (this.words.length === 0) {
-            this.game_over(true);
+            if (this.mode !== "grade") {
+                this.win = true;
+                this.game_over(true);
+            }
+            else {
+                this.grade_mode();
+            }
         }
         if (this.te > 60)
             for (var i = 0; i<this.words.length; i++) {
@@ -428,12 +480,14 @@ class Player extends GameObject {
         if (this.skill_coldtime > this.eps)
             this.skill_coldtime -= this.timedelta / 1000;
         // CD image
+        var r = (0.9 - this.skill_coldtime) * (this.playground.height / 15);
+        var cur_x = this.playground.width * 0.92;
+        var cur_y = this.playground.height * 0.12;
         this.ctx.beginPath();
-        this.ctx.arc(this.playground.width*0.95, this.playground.height*0.1, 50*this.skill_coldtime, 0, 2*Math.PI);
-        this.ctx.fillstyle = "red";
-        this.ctx.fill();
+        this.ctx.arc(cur_x, cur_y, r + this.skill_coldtime*(this.playground.height/15), 0, 2*Math.PI);
         this.ctx.stroke();
         this.ctx.closePath();
+        this.Load_CDimg(cur_x-r, cur_y-r, 2*r);
         // lift show
         for (var i=0; i<this.life; i++) {
             this.ctx.beginPath();
@@ -448,7 +502,11 @@ class Player extends GameObject {
     }
 
     render() {
-        this.img.onload()
+        if (!this.end)
+            this.img.onload()
+        else {
+            this.game_over(this.win);
+        }
     }
 
 }
@@ -475,6 +533,8 @@ class Word extends GameObject{
         }
         this.mode = mode;
         this.id = id;
+        this.end = false;
+        this.dt = 0;
     }
 
     start() {
@@ -498,50 +558,54 @@ class Word extends GameObject{
     }
 
     is_attacked() {
+        var real_mode = this.playground.mode;
+        if (real_mode === "grade") {
+            this.playground.player.score += this.playground.player.init / 5 - 1;
+        }
         for (let i = 0; i < this.playground.words.length; i ++ ) {
             if (this.playground.words[i] === this) {
                 this.playground.words.splice(i, 1);
             }
         }
-
-       this.destroy();
+        this.show_audio();
+        this.end = true;
     }
 
-    exhibition(x, y, w, h, photo) {
-        var img = new Image();
-        img.src = photo;
-        let outer = this;
-        img.onload = function() {
-            outer.ctx.drawImage(img, x-w/2, y-h/2, outer.w*10, outer.h*10);
-        }
-        img.onload();
-    }
-
-    on_destroy() {
+    show_audio() {
         var audio_html = $(`<audio id="audio" src=${this.path}.mp3></audio>`);
         this.playground.$playground.append(audio_html);
         var audio = $("#audio")[0];
+        audio.volume = 1;
         audio.play();
         let outer = this;
         audio.addEventListener('ended', function () {
-            outer.exhibition(outer.x, outer.y, outer.w, outer.h, `${outer.path}.png`);
             audio_html.remove();
         }, false);
     }
 
-    update(){
-        if (this.move_length < this.eps) {
-            this.move_length = 0;
+    update() {
+        if (this.end) {
             this.vx = this.vy = 0;
-            let tx = Math.random() * this.playground.width;
-            let ty = Math.random() * this.playground.height;
-            this.move_to(tx, ty);
+            this.w *= 1.005;
+            this.h *= 1.005;
+            this.dt += this.timedelta / 1000;
+            if (this.dt > 2) {
+                this.destroy();
+            }
         }
-        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-        this.x += this.vx * moved;
-        this.y += this.vy * moved;
-        this.move_length -= moved;
-
+        else {
+            if (this.move_length < this.eps) {
+                this.move_length = 0;
+                this.vx = this.vy = 0;
+                let tx = Math.random() * this.playground.width;
+                let ty = Math.random() * this.playground.height;
+                this.move_to(tx, ty);
+            }
+            let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+            this.x += this.vx * moved;
+            this.y += this.vy * moved;
+            this.move_length -= moved;
+        }
         this.render();
     }
 
@@ -564,7 +628,7 @@ class PlayGround {
 
     randomNum(minNum,maxNum){ 
         switch(arguments.length){ 
-            case 1: 
+            case 1:
                 return parseInt(Math.random()*minNum+1,10); 
                 break; 
             case 2: 
@@ -577,6 +641,7 @@ class PlayGround {
     } 
 
     show(mode) {
+        this.mode = mode;
         this.$playground.show();
         this.words = [];
         this.width = this.$playground.width();
@@ -589,12 +654,56 @@ class PlayGround {
                 this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
             }
         }
+        else if (mode === "difficult"){
+            for (var i=0; i<15; i++) {
+                var r = this.randomNum(1, 974);
+                this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
+            }
+        }
+        else if (mode === "easy") {
+            for (var i=0; i<6; i++) {
+                var r = this.randomNum(1, 599);
+                this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
+            }
+        }
         else {
         }
     }
-    hide() {
-        this.$playground.hide();
+        hide() {
+            this.$playground.hide();
+        }
     }
+class ProBar {
+    constructor(root) {
+        this.root = root;
+        this.$pro_bar = $(`
+        <div class="game-menu">
+            <div class="progress">
+                <div class="pro-bar"></div>
+            </div>
+        </div>
+            `);
+        this.root.$main_game.append(this.$pro_bar);
+        this.start();
+    }
+    start() { 
+        t = setInterval(this.progress, 60); 
+    }
+    progress() { 
+        var i = 0;
+        if (i < 100) { 
+            i++; 
+            bar.style.width = i + "%"; 
+            bar.innerHTML = i + " %"; 
+        }
+        else { 
+            clearInterval(t);
+        }
+    }
+    stop() { 
+        clearInterval(t); 
+    }
+
 }
 export class MainGame {
     constructor(id) {

@@ -21,6 +21,8 @@ class Word extends GameObject{
         }
         this.mode = mode;
         this.id = id;
+        this.end = false;
+        this.dt = 0;
     }
 
     start() {
@@ -44,50 +46,54 @@ class Word extends GameObject{
     }
 
     is_attacked() {
+        var real_mode = this.playground.mode;
+        if (real_mode === "grade") {
+            this.playground.player.score += this.playground.player.init / 5 - 1;
+        }
         for (let i = 0; i < this.playground.words.length; i ++ ) {
             if (this.playground.words[i] === this) {
                 this.playground.words.splice(i, 1);
             }
         }
-
-       this.destroy();
+        this.show_audio();
+        this.end = true;
     }
 
-    exhibition(x, y, w, h, photo) {
-        var img = new Image();
-        img.src = photo;
-        let outer = this;
-        img.onload = function() {
-            outer.ctx.drawImage(img, x-w/2, y-h/2, outer.w*10, outer.h*10);
-        }
-        img.onload();
-    }
-
-    on_destroy() {
+    show_audio() {
         var audio_html = $(`<audio id="audio" src=${this.path}.mp3></audio>`);
         this.playground.$playground.append(audio_html);
         var audio = $("#audio")[0];
+        audio.volume = 1;
         audio.play();
         let outer = this;
         audio.addEventListener('ended', function () {
-            outer.exhibition(outer.x, outer.y, outer.w, outer.h, `${outer.path}.png`);
             audio_html.remove();
         }, false);
     }
 
-    update(){
-        if (this.move_length < this.eps) {
-            this.move_length = 0;
+    update() {
+        if (this.end) {
             this.vx = this.vy = 0;
-            let tx = Math.random() * this.playground.width;
-            let ty = Math.random() * this.playground.height;
-            this.move_to(tx, ty);
+            this.w *= 1.005;
+            this.h *= 1.005;
+            this.dt += this.timedelta / 1000;
+            if (this.dt > 2) {
+                this.destroy();
+            }
         }
-        let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
-        this.x += this.vx * moved;
-        this.y += this.vy * moved;
-        this.move_length -= moved;
-
+        else {
+            if (this.move_length < this.eps) {
+                this.move_length = 0;
+                this.vx = this.vy = 0;
+                let tx = Math.random() * this.playground.width;
+                let ty = Math.random() * this.playground.height;
+                this.move_to(tx, ty);
+            }
+            let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
+            this.x += this.vx * moved;
+            this.y += this.vy * moved;
+            this.move_length -= moved;
+        }
         this.render();
     }
 

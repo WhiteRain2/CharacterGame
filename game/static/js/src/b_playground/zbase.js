@@ -26,6 +26,7 @@ class PlayGround {
     } 
 
     show(mode) {
+        this.mode = mode;
         this.$playground.show();
         this.words = [];
         this.width = this.$playground.width();
@@ -38,10 +39,22 @@ class PlayGround {
                 this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
             }
         }
+        else if (mode === "difficult"){
+            for (var i=0; i<15; i++) {
+                var r = this.randomNum(1, 974);
+                this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
+            }
+        }
+        else if (mode === "easy") {
+            for (var i=0; i<6; i++) {
+                var r = this.randomNum(1, 599);
+                this.words.push(new Word(this, 10, 10, 50, 50, this.width*0.12, mode, r));
+            }
+        }
         else {
         }
     }
-    hide() {
-        this.$playground.hide();
+        hide() {
+            this.$playground.hide();
+        }
     }
-}

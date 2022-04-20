@@ -3,6 +3,7 @@ class Player extends GameObject {
         // who is easy common difficult endless me
         super();
         this.playground = playground;
+        this.mode = this.playground.mode;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -19,13 +20,17 @@ class Player extends GameObject {
         this.img = new Image();
         this.img.src = this.photo;
         this.end = false;
+        this.end_buff = 0;
         let outer = this;
         this.te = 0;  //set time for attached
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         this.life = 3;
+        //grade
+        this.init = 5;
+        this.score = 0;
     }
 
     start() {
@@ -59,8 +64,10 @@ class Player extends GameObject {
         });
         this.playground.$playground.mousedown(function(e){
             if (outer.end) {
-                location.reload();
-                return;
+                if (outer.end_buff > 180)
+                    location.reload();
+                else
+                    return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
@@ -79,13 +86,14 @@ class Player extends GameObject {
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let photo = "../../../static/material/images/water.png";
-        let speed = this.playground.height * 0.5;
+        let speed = this.playground.height * 0.7;
         let move_length = this.playground.height * 1;
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         new Water(this.playground, this.x, this.y, w, h, vx, vy, photo, speed, move_length, this.playground.height * 0.01);
     }
 
     game_over(r) {
+        this.end_buff ++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
         else photo += "down.png";
@@ -94,20 +102,53 @@ class Player extends GameObject {
         let outer = this;
 
         img.onload = function() {
-            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, 500, 500);
+            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, outer.playground.width/3, outer.playground.height/2);
         }
         img.onload();
-        for (var i=0; i<500000; i++);
         this.end = true;
     }
 
+    Load_CDimg(x, y, r) {
+        let photo = "../../../static/material/images/cdImg.png";
+        var img = new Image();
+        img.src = photo;
+        let outer = this;
+        img.onload = function() {
+            outer.ctx.drawImage(img, x, y, r, r);
+        }
+        img.onload();
+    }
+
+
+    grade_mode() {
+        for (let i=0; i<this.init; i++) {
+            var r = this.playground.randomNum(1, 900);
+            var cur_mode = "common";
+            this.words.push(new Word(this.playground, 10, 10, 50,50, this.playground.width*0.12, cur_mode, r));
+            cur_mode = "different";
+        }
+        this.init += 5;
+    }
+
     update() {
+        if (this.mode === "grade") {
+            var s = `当前得分: ${this.score}`;
+            this.ctx.font = "normal normal 20px Verdana";
+            this.ctx.fillText("haha", this.playground.width/2, this.playground.height*0.2, this.playground.width);
+        }
         this.te ++;
         if (this.life === 0) {
+            this.win = false;
             this.game_over(false);
         }
         if (this.words.length === 0) {
-            this.game_over(true);
+            if (this.mode !== "grade") {
+                this.win = true;
+                this.game_over(true);
+            }
+            else {
+                this.grade_mode();
+            }
         }
         if (this.te > 60)
             for (var i = 0; i<this.words.length; i++) {
@@ -131,12 +172,14 @@ class Player extends GameObject {
         if (this.skill_coldtime > this.eps)
             this.skill_coldtime -= this.timedelta / 1000;
         // CD image
+        var r = (0.9 - this.skill_coldtime) * (this.playground.height / 15);
+        var cur_x = this.playground.width * 0.92;
+        var cur_y = this.playground.height * 0.12;
         this.ctx.beginPath();
-        this.ctx.arc(this.playground.width*0.95, this.playground.height*0.1, 50*this.skill_coldtime, 0, 2*Math.PI);
-        this.ctx.fillstyle = "red";
-        this.ctx.fill();
+        this.ctx.arc(cur_x, cur_y, r + this.skill_coldtime*(this.playground.height/15), 0, 2*Math.PI);
         this.ctx.stroke();
         this.ctx.closePath();
+        this.Load_CDimg(cur_x-r, cur_y-r, 2*r);
         // lift show
         for (var i=0; i<this.life; i++) {
             this.ctx.beginPath();
@@ -151,7 +194,11 @@ class Player extends GameObject {
     }
 
     render() {
-        this.img.onload()
+        if (!this.end)
+            this.img.onload()
+        else {
+            this.game_over(this.win);
+        }
     }
 
 }

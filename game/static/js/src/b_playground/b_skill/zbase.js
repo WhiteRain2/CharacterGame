@@ -39,6 +39,7 @@ class Water extends GameObject {
             let word = this.playground.words[i];
             if (this.is_collision(word)) {
                 this.attack(word);
+                break;
             }
         }
 
