@@ -121,21 +121,61 @@ class Player extends GameObject {
 
 
     grade_mode() {
+        var sx = this.playground.width;
+        var sy = this.playground.height;
+        var pos = [
+            [sx*0.1, sy*0.1],
+            [sx*0.1, sy*0.9],
+            [sx*0.9, sy*0.1],
+            [sx*0.9, sy*0.9]
+        ];
+        var word_a = sy * 0.07;
         for (let i=0; i<this.init; i++) {
             var r = this.playground.randomNum(1, 900);
+            var p = Math.floor(Math.random()*4);
             var cur_mode = "common";
-            this.words.push(new Word(this.playground, 10, 10, 50,50, this.playground.width*0.12, cur_mode, r));
+            this.words.push(new Word(this.playground, pos[p][0], pos[p][1], word_a, word_a, this.playground.width*0.1, cur_mode, r));
             cur_mode = "different";
         }
         this.init += 5;
     }
 
-    update() {
-        if (this.mode === "grade") {
-            var s = `当前得分: ${this.score}`;
-            this.ctx.font = "normal normal 20px Verdana";
-            this.ctx.fillText("haha", this.playground.width/2, this.playground.height*0.2, this.playground.width);
+    show_grade_score(score) {
+        var num = [];
+        while (score != 0) {
+            num.push(score % 10);
+            score = parseInt(score / 10);
         }
+        var score_path = "../../../static/material/images/score_img";
+        var r = this.playground.width * 0.02;
+        var cur_x = this.playground.width / 2 - r;
+        var cur_y = this.playground.height * 0.07;
+        var interval = this.playground.width * 0.015;
+        var k = 0;
+        for (var i=num.length-1; i>=0; i--) {
+            var score_img = new Image();
+            score_img.src = `${score_path}/${num[i]}.png`;
+            let outer = this;
+            score_img.onload = function() {
+                outer.ctx.drawImage(score_img, cur_x + k*interval, cur_y, r, r);
+                k ++;
+            }
+            score_img.onload();
+            var ico_img = new Image();
+            ico_img.src = `${score_path}/ico.png`;
+            ico_img.onload = function() {
+                outer.ctx.drawImage(ico_img, cur_x*0.95, cur_y, r, r);
+            }
+            ico_img.onload();
+        }
+    }
+
+    update() {
+        // show grade score
+        if (this.mode === "grade") {
+            this.show_grade_score(this.score);
+        }
+
         this.te ++;
         if (this.life === 0) {
             this.win = false;
@@ -180,14 +220,15 @@ class Player extends GameObject {
         this.ctx.stroke();
         this.ctx.closePath();
         this.Load_CDimg(cur_x-r, cur_y-r, 2*r);
-        // lift show
+        // life img
+        var life_img = new Image();
+        life_img.src = "../../../static/material/images/life.png";
+        let outer = this;
+        life_img.onload = function(x, y, r) {
+            outer.ctx.drawImage(life_img, x, y, r, r);
+        };
         for (var i=0; i<this.life; i++) {
-            this.ctx.beginPath();
-            this.ctx.arc(this.playground.width*(0.7+i*0.1), this.playground.height*0.9, 25, 0, 2*Math.PI);
-            this.ctx.fillstyle = "red";
-            this.ctx.fill();
-            this.ctx.stroke();
-            this.ctx.closePath();
+            life_img.onload(this.playground.width*(0.8+i*0.07), this.playground.height*0.85, this.playground.width * 0.04);
         }
 
         this.render();
