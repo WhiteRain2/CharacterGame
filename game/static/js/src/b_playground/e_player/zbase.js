@@ -57,17 +57,22 @@ class Player extends GameObject {
     }
 
     add_listening_events() {
+        if (this.end) return;
         let outer = this;
         // close the menu of right
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
         });
         this.playground.$playground.mousedown(function(e){
+            console.log("eee");
             if (outer.end) {
-                if (outer.end_buff > 180)
-                    location.reload();
-                else
-                    return;
+                if (outer.end_buff > 180) {
+                   // outer.playground.game_map.remove();
+                    outer.destroy();
+                    outer.playground.root.menu.show();
+                  //  location.reload();
+                }
+                return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
@@ -93,6 +98,9 @@ class Player extends GameObject {
     }
 
     game_over(r) {
+        console.log("life");
+        console.log(this.life);
+        console.log(this.words.length);
         this.end_buff ++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
@@ -119,6 +127,15 @@ class Player extends GameObject {
         img.onload();
     }
 
+
+    on_destroy() {
+        this.playground.hide();
+        for (let i=0; i<this.playground.words.length; i++) {
+            this.playground.words[i].destroy();
+        }
+        this.words.length = 0;
+        this.playground.game_map.destroy();
+    }
 
     grade_mode() {
         var sx = this.playground.width;
@@ -177,11 +194,11 @@ class Player extends GameObject {
         }
 
         this.te ++;
-        if (this.life === 0) {
+        if (this.life <= 0) {
             this.win = false;
             this.game_over(false);
         }
-        if (this.words.length === 0) {
+        if (this.words.length <= 0) {
             if (this.mode !== "grade") {
                 this.win = true;
                 this.game_over(true);

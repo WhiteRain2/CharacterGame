@@ -3,6 +3,7 @@ class Player extends GameObject {
         // who is easy common difficult endless me
         super();
         this.playground = playground;
+        this.mode = this.playground.mode;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -19,13 +20,17 @@ class Player extends GameObject {
         this.img = new Image();
         this.img.src = this.photo;
         this.end = false;
+        this.end_buff = 0;
         let outer = this;
         this.te = 0;  //set time for attached
         this.img.onload = function() {
             outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
         }
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         this.life = 3;
+        //grade
+        this.init = 5;
+        this.score = 0;
     }
 
     start() {
@@ -52,16 +57,19 @@ class Player extends GameObject {
     }
 
     add_listening_events() {
+        if (this.end) return;
         let outer = this;
         // close the menu of right
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
         });
         this.playground.$playground.mousedown(function(e){
-            if (outer.end) {
-                location.reload();
+            console.log("eee");
+                if (outer.end_buff > 180) {
+                    outer.destroy();
+                    outer.playground.root.menu.show();
+                }
                 return;
-            }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
                 outer.move_to(e.clientX-rect.left, e.clientY-rect.top);
@@ -79,13 +87,17 @@ class Player extends GameObject {
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let photo = "../../../static/material/images/water.png";
-        let speed = this.playground.height * 0.5;
+        let speed = this.playground.height * 0.7;
         let move_length = this.playground.height * 1;
-        this.skill_coldtime = 1.5;
+        this.skill_coldtime = 0.9;
         new Water(this.playground, this.x, this.y, w, h, vx, vy, photo, speed, move_length, this.playground.height * 0.01);
     }
 
     game_over(r) {
+        console.log("life");
+        console.log(this.life);
+        console.log(this.words.length);
+        this.end_buff ++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
         else photo += "down.png";
@@ -94,22 +106,104 @@ class Player extends GameObject {
         let outer = this;
 
         img.onload = function() {
-            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, 500, 500);
+            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, outer.playground.width/3, outer.playground.height/2);
         }
         img.onload();
-   //     for (val i=0; i<10000; i++) {}
         this.end = true;
     }
 
+    Load_CDimg(x, y, r) {
+        let photo = "../../../static/material/images/cdImg.png";
+        var img = new Image();
+        img.src = photo;
+        let outer = this;
+        img.onload = function() {
+            outer.ctx.drawImage(img, x, y, r, r);
+        }
+        img.onload();
+    }
+
+
+    on_destroy() {
+        this.playground.hide();
+        for (let i=0; i<this.playground.words.length; i++) {
+            this.playground.words[i].destroy();
+        }
+        this.words.length = 0;
+        this.playground.game_map.destroy();
+    }
+
+    grade_mode() {
+        var sx = this.playground.width;
+        var sy = this.playground.height;
+        var pos = [
+            [sx*0.1, sy*0.1],
+            [sx*0.1, sy*0.9],
+            [sx*0.9, sy*0.1],
+            [sx*0.9, sy*0.9]
+        ];
+        var word_a = sy * 0.07;
+        for (let i=0; i<this.init; i++) {
+            var r = this.playground.randomNum(1, 900);
+            var p = Math.floor(Math.random()*4);
+            var cur_mode = "common";
+            this.words.push(new Word(this.playground, pos[p][0], pos[p][1], word_a, word_a, this.playground.width*0.1, cur_mode, r));
+            cur_mode = "different";
+        }
+        this.init += 5;
+    }
+
+    show_grade_score(score) {
+        var num = [];
+        while (score != 0) {
+            num.push(score % 10);
+            score = parseInt(score / 10);
+        }
+        var score_path = "../../../static/material/images/score_img";
+        var r = this.playground.width * 0.02;
+        var cur_x = this.playground.width / 2 - r;
+        var cur_y = this.playground.height * 0.07;
+        var interval = this.playground.width * 0.015;
+        var k = 0;
+        for (var i=num.length-1; i>=0; i--) {
+            var score_img = new Image();
+            score_img.src = `${score_path}/${num[i]}.png`;
+            let outer = this;
+            score_img.onload = function() {
+                outer.ctx.drawImage(score_img, cur_x + k*interval, cur_y, r, r);
+                k ++;
+            }
+            score_img.onload();
+            var ico_img = new Image();
+            ico_img.src = `${score_path}/ico.png`;
+            ico_img.onload = function() {
+                outer.ctx.drawImage(ico_img, cur_x*0.95, cur_y, r, r);
+            }
+            ico_img.onload();
+        }
+    }
+
     update() {
+        // show grade score
+        if (this.mode === "grade") {
+            this.show_grade_score(this.score);
+        }
+
         this.te ++;
-        if (this.life === 0) {
+        if (this.life <= 0) {
+            this.win = false;
             this.game_over(false);
         }
-        if (this.words.length === 0) {
-            this.game_over(true);
+        if (this.words.length <= 0) {
+            if (this.mode !== "grade") {
+                this.win = true;
+                this.game_over(true);
+            }
+            else {
+                this.grade_mode();
+            }
         }
-        if (this.te > 120)
+        if (this.te > 60)
             for (var i = 0; i<this.words.length; i++) {
                 if (this.is_collision(this.words[i])) {
                     this.life -= 1;
@@ -131,27 +225,34 @@ class Player extends GameObject {
         if (this.skill_coldtime > this.eps)
             this.skill_coldtime -= this.timedelta / 1000;
         // CD image
+        var r = (0.9 - this.skill_coldtime) * (this.playground.height / 15);
+        var cur_x = this.playground.width * 0.92;
+        var cur_y = this.playground.height * 0.12;
         this.ctx.beginPath();
-        this.ctx.arc(this.playground.width*0.95, this.playground.height*0.1, 50*this.skill_coldtime, 0, 2*Math.PI);
-        this.ctx.fillstyle = "red";
-        this.ctx.fill();
+        this.ctx.arc(cur_x, cur_y, r + this.skill_coldtime*(this.playground.height/15), 0, 2*Math.PI);
         this.ctx.stroke();
         this.ctx.closePath();
-        // lift show
+        this.Load_CDimg(cur_x-r, cur_y-r, 2*r);
+        // life img
+        var life_img = new Image();
+        life_img.src = "../../../static/material/images/life.png";
+        let outer = this;
+        life_img.onload = function(x, y, r) {
+            outer.ctx.drawImage(life_img, x, y, r, r);
+        };
         for (var i=0; i<this.life; i++) {
-            this.ctx.beginPath();
-            this.ctx.arc(this.playground.width*(0.7+i*0.1), this.playground.height*0.9, 25, 0, 2*Math.PI);
-            this.ctx.fillstyle = "red";
-            this.ctx.fill();
-            this.ctx.stroke();
-            this.ctx.closePath();
+            life_img.onload(this.playground.width*(0.8+i*0.07), this.playground.height*0.85, this.playground.width * 0.04);
         }
 
         this.render();
     }
 
     render() {
-        this.img.onload()
+        if (!this.end)
+            this.img.onload()
+        else {
+            this.game_over(this.win);
+        }
     }
 
 }

@@ -33,4 +33,7 @@ class GameMap extends GameObject {
 
     }
 
+    on_destroy() {
+        this.$canvas.remove();
+    }
 }

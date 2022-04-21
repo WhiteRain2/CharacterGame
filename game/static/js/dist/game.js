@@ -66,7 +66,6 @@ class GameMenu {
         this.root = root;
         this.$menu = $(`
 <div class="game-menu">
-    <audio class="game-menu-audio" id="menu_audio" autoplay="autoplay" src="http://music.163.com/song/media/outer/url?id=1853863650.mp3"></audio>
     <div class="game-menu-field">
         <div class="game-menu-field-item game-menu-field-item-pass-mode">
             关卡模式
@@ -86,9 +85,8 @@ class GameMenu {
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
-        this.menu_audio = $('#menu_audio')[0];
-        this.menu_audio.volume = 0.1;
         this.src = false;
+        this.hide();
         this.start();
     }
 
@@ -99,14 +97,7 @@ class GameMenu {
 
 
    add_listening_events() {
-        let outer = this;
-       this.$menu.click(function() {
-           if (!outer.src) {
-               outer.menu_audio.volume = 0.1;
-               outer.menu_audio.play();
-               outer.src = true;
-           }
-       });
+       let outer = this;
        this.$pass_mode.click(function(){
            outer.hide();
            outer.pass_menu = new PassMode(outer);
@@ -305,6 +296,9 @@ class GameMap extends GameObject {
 
     }
 
+    on_destroy() {
+        this.$canvas.remove();
+    }
 }
 class Player extends GameObject {
     constructor(playground, x, y, w, h, speed, who, photo) {
@@ -365,17 +359,18 @@ class Player extends GameObject {
     }
 
     add_listening_events() {
+        if (this.end) return;
         let outer = this;
         // close the menu of right
         this.playground.game_map.$canvas.on("contextmenu", function() {
             return false;
         });
         this.playground.$playground.mousedown(function(e){
+            console.log("eee");
             if (outer.end) {
-                if (outer.end_buff > 180)
-                    location.reload();
-                else
-                    return;
+                outer.destroy();
+                outer.playground.root.menu.show();
+                return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
@@ -401,6 +396,9 @@ class Player extends GameObject {
     }
 
     game_over(r) {
+        console.log("life");
+        console.log(this.life);
+        console.log(this.words.length);
         this.end_buff ++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
@@ -427,6 +425,15 @@ class Player extends GameObject {
         img.onload();
     }
 
+
+    on_destroy() {
+        this.playground.hide();
+        for (let i=0; i<this.playground.words.length; i++) {
+            this.playground.words[i].destroy();
+        }
+        this.words.length = 0;
+        this.playground.game_map.destroy();
+    }
 
     grade_mode() {
         var sx = this.playground.width;
@@ -485,11 +492,11 @@ class Player extends GameObject {
         }
 
         this.te ++;
-        if (this.life === 0) {
+        if (this.life <= 0) {
             this.win = false;
             this.game_over(false);
         }
-        if (this.words.length === 0) {
+        if (this.words.length <= 0) {
             if (this.mode !== "grade") {
                 this.win = true;
                 this.game_over(true);
@@ -658,7 +665,6 @@ class PlayGround {
     constructor(root) {
         this.root = root;
         this.$playground = $(`<div class="game-playground"></div>`);
-        
         this.hide();
         this.root.$main_game.append(this.$playground);
 
@@ -729,39 +735,61 @@ class ProBar {
     constructor(root) {
         this.root = root;
         this.$pro_bar = $(`
-        <div class="game-menu">
-            <div class="progress">
-                <div class="pro-bar"></div>
-            </div>
-        </div>
+	<div class="ProBar">
+		<div class="channel">
+		   汉字大作战 游戏资源加载中...
+		</div>
+		<div class="container">
+			<div class="loader">
+				<div style="--i:1;--color:#FD79A8"></div>
+				<div style="--i:2;--color:#0984E3"></div>
+				<div style="--i:3;--color:#00B894"></div>
+				<div style="--i:4;--color:#FDCB6E"></div>
+			</div>
+		</div>
+	</div>
             `);
-        this.root.$main_game.append(this.$pro_bar);
+        this.$audio = $(`
+            <audio class="src-audio" id="audio" autoplay="autoplay" loop src="http://music.163.com/song/media/outer/url?id=1853863650.mp3"></audio>
+        `);
+        this.$button = $(`
+            <div class="src-button">
+                <div class="text">点击界面加载游戏</div>
+            </div>
+        `);
+        this.root.$main_game.append(this.$audio);
+        this.root.$main_game.append(this.$button);
+        this.player = $("#audio")[0];
         this.start();
     }
     start() { 
-        t = setInterval(this.progress, 60); 
-    }
-    progress() { 
-        var i = 0;
-        if (i < 100) { 
-            i++; 
-            bar.style.width = i + "%"; 
-            bar.innerHTML = i + " %"; 
-        }
-        else { 
-            clearInterval(t);
-        }
-    }
-    stop() { 
-        clearInterval(t); 
+        this.add_listening_events();
     }
 
+    add_listening_events() {
+        let outer = this;
+        this.$button.click(function(){
+            outer.$button.remove();
+            outer.root.$main_game.append(outer.$audio);
+            outer.root.$main_game.append(outer.$pro_bar);
+            outer.player.play();
+            outer.player.volume = 0.1;
+        });
+        this.$pro_bar.mouseover(function(){
+            while (outer.player.currentTime > 8) {
+                outer.$pro_bar.remove();
+                outer.root.menu.show();
+                return;
+            }
+        });
+    }
 }
 export class MainGame {
     constructor(id) {
         this.id = id;
         this.$main_game = $('#'+id);
         this.menu = new GameMenu(this);
+        this.probar = new ProBar(this);
         this.playground = new PlayGround(this);
 
         this.start();
