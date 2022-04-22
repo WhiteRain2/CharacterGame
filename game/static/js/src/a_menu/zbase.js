@@ -3,6 +3,7 @@ class GameMenu {
         this.root = root;
         this.$menu = $(`
 <div class="game-menu">
+    <audio autoplay loop class="game-menu-audio" id="back_audio" src="../../../static/material/audio/menu.mp3"></audio>
     <div class="game-menu-field">
         <div class="game-menu-field-item game-menu-field-item-pass-mode">
             关卡模式
@@ -20,10 +21,10 @@ class GameMenu {
 `);
         this.root.$main_game.append(this.$menu);
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
+        this.$audio = $("#back_audio")[0];
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
         this.src = false;
-        this.hide();
         this.start();
     }
 
@@ -35,6 +36,13 @@ class GameMenu {
 
    add_listening_events() {
        let outer = this;
+       this.$menu.click(function(){
+           if (!outer.src) {
+               outer.$audio.volume = 0.1;
+               outer.$audio.play();
+               outer.src = true;
+           }
+       });
        this.$pass_mode.click(function(){
            outer.hide();
            outer.pass_menu = new PassMode(outer);
@@ -44,8 +52,8 @@ class GameMenu {
            outer.root.playground.show("grade");
        });
        this.$explain.click(function(){
-           console.log('YES');
-           // outer.root.settings.logout_on_remote();
+           outer.hide();
+           new Explain(outer.root);
        });
    }
 

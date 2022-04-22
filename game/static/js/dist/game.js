@@ -66,6 +66,7 @@ class GameMenu {
         this.root = root;
         this.$menu = $(`
 <div class="game-menu">
+    <audio autoplay loop class="game-menu-audio" id="back_audio" src="../../../static/material/audio/menu.mp3"></audio>
     <div class="game-menu-field">
         <div class="game-menu-field-item game-menu-field-item-pass-mode">
             关卡模式
@@ -83,10 +84,10 @@ class GameMenu {
 `);
         this.root.$main_game.append(this.$menu);
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
+        this.$audio = $("#back_audio")[0];
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
         this.src = false;
-        this.hide();
         this.start();
     }
 
@@ -98,6 +99,13 @@ class GameMenu {
 
    add_listening_events() {
        let outer = this;
+       this.$menu.click(function(){
+           if (!outer.src) {
+               outer.$audio.volume = 0.1;
+               outer.$audio.play();
+               outer.src = true;
+           }
+       });
        this.$pass_mode.click(function(){
            outer.hide();
            outer.pass_menu = new PassMode(outer);
@@ -107,8 +115,8 @@ class GameMenu {
            outer.root.playground.show("grade");
        });
        this.$explain.click(function(){
-           console.log('YES');
-           // outer.root.settings.logout_on_remote();
+           outer.hide();
+           new Explain(outer.root);
        });
    }
 
@@ -368,8 +376,11 @@ class Player extends GameObject {
         this.playground.$playground.mousedown(function(e){
             console.log("eee");
             if (outer.end) {
-                outer.destroy();
-                outer.playground.root.menu.show();
+                if (outer.end_buff > 180) {
+                   // outer.destroy();
+                   // outer.playground.root.menu.show();
+                   location.reload();
+                }
                 return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
@@ -731,6 +742,50 @@ class PlayGround {
         this.$playground.hide();
     }
 }
+class Explain {
+    constructor(root) {
+        this.root = root;
+        this.$game_explain = $(`
+<div class="game-explain">
+    <div class="game-explain-frame">
+        <div class="game-explain-frame-text">
+            <p>
+            中国汉字，博大精深，源远流长。
+            炎黄子孙，华夏儿女，定当弘扬。
+            </p>
+            <p>
+            汉字构造精巧，行美旨远，它的美，美在真情，美在精髓，美在风骨，美在形体。
+            </p>
+            <p>
+            本游戏旨在让更多的人们认识到汉字的魅力，在趣味中认识汉字，学习汉字，弘扬汉字。弘扬中华文化之瑰宝，感悟中华民族之灵魂！
+            </p>
+            <p>
+            本游戏适用人群：任何热爱中国汉字的人们！
+            </p>
+            <p>
+            操作方式：鼠标左键控制毛笔移动，右键发射墨水。
+            </p>
+        </div>
+    </div>
+</div>
+        `);
+        this.root.$main_game.append(this.$game_explain);
+        this.start();
+    }
+    start() {
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        let outer = this;
+        this.$game_explain.click(function(){
+            outer.$game_explain.remove();
+            outer.root.menu.show();
+        });
+    }
+}
+
+
 class ProBar {
     constructor(root) {
         this.root = root;
@@ -789,7 +844,7 @@ export class MainGame {
         this.id = id;
         this.$main_game = $('#'+id);
         this.menu = new GameMenu(this);
-        this.probar = new ProBar(this);
+       // this.probar = new ProBar(this);
         this.playground = new PlayGround(this);
 
         this.start();

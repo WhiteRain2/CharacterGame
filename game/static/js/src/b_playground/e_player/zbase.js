@@ -67,10 +67,9 @@ class Player extends GameObject {
             console.log("eee");
             if (outer.end) {
                 if (outer.end_buff > 180) {
-                   // outer.playground.game_map.remove();
-                    outer.destroy();
-                    outer.playground.root.menu.show();
-                  //  location.reload();
+                   // outer.destroy();
+                   // outer.playground.root.menu.show();
+                   location.reload();
                 }
                 return;
             }
