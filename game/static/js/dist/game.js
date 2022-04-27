@@ -79,14 +79,20 @@ class GameMenu {
         <div class="game-menu-field-item game-menu-field-item-explain">
             游戏说明
         </div>
+        <div class="game-menu-field-item game-menu-field-item-settings">
+            退出登录
+        </div>
     </div>
 </div>
 `);
         this.root.$main_game.append(this.$menu);
+        this.hide();
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
         this.$audio = $("#back_audio")[0];
+        this.$audio.volume = 0.1;
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
+        this.$settings = this.$menu.find('.game-menu-field-item-settings');
         this.src = false;
         this.start();
     }
@@ -95,30 +101,32 @@ class GameMenu {
         this.add_listening_events();
     }
 
-
-
-   add_listening_events() {
-       let outer = this;
-       this.$menu.click(function(){
-           if (!outer.src) {
-               outer.$audio.volume = 0.1;
-               outer.$audio.play();
-               outer.src = true;
-           }
-       });
-       this.$pass_mode.click(function(){
-           outer.hide();
-           outer.pass_menu = new PassMode(outer);
-       });
-       this.$grade_mode.click(function(){
-           outer.hide();
-           outer.root.playground.show("grade");
-       });
-       this.$explain.click(function(){
-           outer.hide();
-           new Explain(outer.root);
-       });
-   }
+    add_listening_events() {
+        let outer = this;
+        this.$menu.click(function () {
+            if (!outer.src) {
+                outer.$audio.volume = 0.1;
+                outer.$audio.play();
+                outer.src = true;
+            }
+        });
+        this.$pass_mode.click(function () {
+            outer.hide();
+            outer.pass_menu = new PassMode(outer);
+        });
+        this.$grade_mode.click(function () {
+            outer.hide();
+            outer.root.playground.show("grade");
+        });
+        this.$explain.click(function () {
+            outer.hide();
+            new Explain(outer.root);
+        });
+        this.$settings.click(function () {
+            outer.hide();
+            outer.root.settings.logout_on_remote();
+        });
+    }
 
     show() {  // 显示menu界面
         this.$menu.show();
@@ -333,8 +341,8 @@ class Player extends GameObject {
         this.end_buff = 0;
         let outer = this;
         this.te = 0;  //set time for attached
-        this.img.onload = function() {
-            outer.ctx.drawImage(outer.img, outer.x-outer.w/2, outer.y-outer.h/2, outer.w, outer.h);
+        this.img.onload = function () {
+            outer.ctx.drawImage(outer.img, outer.x - outer.w / 2, outer.y - outer.h / 2, outer.w, outer.h);
         }
         this.skill_coldtime = 0.9;
         this.life = 3;
@@ -361,8 +369,8 @@ class Player extends GameObject {
     }
 
     is_collision(word) {
-        var d = this.get_dist(this.x-this.w/2, this.y-this.h/2, word.x-word.w/2, word.y-word.h/2);
-        if (d <= this.w/2 + word.w/2) return true;
+        var d = this.get_dist(this.x - this.w / 2, this.y - this.h / 2, word.x - word.w / 2, word.y - word.h / 2);
+        if (d <= this.w / 2 + word.w / 2) return true;
         else return false;
     }
 
@@ -370,32 +378,32 @@ class Player extends GameObject {
         if (this.end) return;
         let outer = this;
         // close the menu of right
-        this.playground.game_map.$canvas.on("contextmenu", function() {
+        this.playground.game_map.$canvas.on("contextmenu", function () {
             return false;
         });
-        this.playground.$playground.mousedown(function(e){
-            console.log("eee");
+        this.playground.$playground.mousedown(function (e) {
             if (outer.end) {
                 if (outer.end_buff > 180) {
-                   // outer.destroy();
-                   // outer.playground.root.menu.show();
-                   location.reload();
+                    // outer.destroy();
+                    // outer.playground.root.menu.show();
+                    outer.playground.root.settings.score = outer.score;
+                    location.reload();
                 }
                 return;
             }
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 1) {
-                outer.move_to(e.clientX-rect.left, e.clientY-rect.top);
+                outer.move_to(e.clientX - rect.left, e.clientY - rect.top);
             }
             else if (e.which === 3) {
                 if (outer.skill_coldtime <= outer.eps)
-                    outer.shoot(e.clientX-rect.left, e.clientY-rect.top);
+                    outer.shoot(e.clientX - rect.left, e.clientY - rect.top);
             }
         });
     }
 
     shoot(tx, ty) {
-        let x = this.x-this.w/2, y = this.y-this.h/2;
+        let x = this.x - this.w / 2, y = this.y - this.h / 2;
         let w = this.w * 0.2, h = this.h * 0.2;
         let angle = Math.atan2(ty - y, tx - x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
@@ -407,10 +415,7 @@ class Player extends GameObject {
     }
 
     game_over(r) {
-        console.log("life");
-        console.log(this.life);
-        console.log(this.words.length);
-        this.end_buff ++;
+        this.end_buff++;
         let photo = "../../../static/material/images/";
         if (r) photo += "up.png";
         else photo += "down.png";
@@ -418,8 +423,8 @@ class Player extends GameObject {
         img.src = photo;
         let outer = this;
 
-        img.onload = function() {
-            outer.ctx.drawImage(img, outer.playground.width/2-250, outer.playground.height/2-250, outer.playground.width/3, outer.playground.height/2);
+        img.onload = function () {
+            outer.ctx.drawImage(img, outer.playground.width / 2 - 250, outer.playground.height / 2 - 250, outer.playground.width / 3, outer.playground.height / 2);
         }
         img.onload();
         this.end = true;
@@ -430,7 +435,7 @@ class Player extends GameObject {
         var img = new Image();
         img.src = photo;
         let outer = this;
-        img.onload = function() {
+        img.onload = function () {
             outer.ctx.drawImage(img, x, y, r, r);
         }
         img.onload();
@@ -439,7 +444,7 @@ class Player extends GameObject {
 
     on_destroy() {
         this.playground.hide();
-        for (let i=0; i<this.playground.words.length; i++) {
+        for (let i = 0; i < this.playground.words.length; i++) {
             this.playground.words[i].destroy();
         }
         this.words.length = 0;
@@ -450,17 +455,17 @@ class Player extends GameObject {
         var sx = this.playground.width;
         var sy = this.playground.height;
         var pos = [
-            [sx*0.1, sy*0.1],
-            [sx*0.1, sy*0.9],
-            [sx*0.9, sy*0.1],
-            [sx*0.9, sy*0.9]
+            [sx * 0.1, sy * 0.1],
+            [sx * 0.1, sy * 0.9],
+            [sx * 0.9, sy * 0.1],
+            [sx * 0.9, sy * 0.9]
         ];
         var word_a = sy * 0.07;
-        for (let i=0; i<this.init; i++) {
+        for (let i = 0; i < this.init; i++) {
             var r = this.playground.randomNum(1, 900);
-            var p = Math.floor(Math.random()*4);
+            var p = Math.floor(Math.random() * 4);
             var cur_mode = "common";
-            this.words.push(new Word(this.playground, pos[p][0], pos[p][1], word_a, word_a, this.playground.width*0.1, cur_mode, r));
+            this.words.push(new Word(this.playground, pos[p][0], pos[p][1], word_a, word_a, this.playground.width * 0.1, cur_mode, r));
             cur_mode = "different";
         }
         this.init += 5;
@@ -478,19 +483,19 @@ class Player extends GameObject {
         var cur_y = this.playground.height * 0.07;
         var interval = this.playground.width * 0.015;
         var k = 0;
-        for (var i=num.length-1; i>=0; i--) {
+        for (var i = num.length - 1; i >= 0; i--) {
             var score_img = new Image();
             score_img.src = `${score_path}/${num[i]}.png`;
             let outer = this;
-            score_img.onload = function() {
-                outer.ctx.drawImage(score_img, cur_x + k*interval, cur_y, r, r);
-                k ++;
+            score_img.onload = function () {
+                outer.ctx.drawImage(score_img, cur_x + k * interval, cur_y, r, r);
+                k++;
             }
             score_img.onload();
             var ico_img = new Image();
             ico_img.src = `${score_path}/ico.png`;
-            ico_img.onload = function() {
-                outer.ctx.drawImage(ico_img, cur_x*0.95, cur_y, r, r);
+            ico_img.onload = function () {
+                outer.ctx.drawImage(ico_img, cur_x * 0.95, cur_y, r, r);
             }
             ico_img.onload();
         }
@@ -502,7 +507,7 @@ class Player extends GameObject {
             this.show_grade_score(this.score);
         }
 
-        this.te ++;
+        this.te++;
         if (this.life <= 0) {
             this.win = false;
             this.game_over(false);
@@ -517,7 +522,7 @@ class Player extends GameObject {
             }
         }
         if (this.te > 60)
-            for (var i = 0; i<this.words.length; i++) {
+            for (var i = 0; i < this.words.length; i++) {
                 if (this.is_collision(this.words[i])) {
                     this.life -= 1;
                     this.te = 0;
@@ -542,19 +547,19 @@ class Player extends GameObject {
         var cur_x = this.playground.width * 0.92;
         var cur_y = this.playground.height * 0.12;
         this.ctx.beginPath();
-        this.ctx.arc(cur_x, cur_y, r + this.skill_coldtime*(this.playground.height/15), 0, 2*Math.PI);
+        this.ctx.arc(cur_x, cur_y, r + this.skill_coldtime * (this.playground.height / 15), 0, 2 * Math.PI);
         this.ctx.stroke();
         this.ctx.closePath();
-        this.Load_CDimg(cur_x-r, cur_y-r, 2*r);
+        this.Load_CDimg(cur_x - r, cur_y - r, 2 * r);
         // life img
         var life_img = new Image();
         life_img.src = "../../../static/material/images/life.png";
         let outer = this;
-        life_img.onload = function(x, y, r) {
+        life_img.onload = function (x, y, r) {
             outer.ctx.drawImage(life_img, x, y, r, r);
         };
-        for (var i=0; i<this.life; i++) {
-            life_img.onload(this.playground.width*(0.8+i*0.07), this.playground.height*0.85, this.playground.width * 0.04);
+        for (var i = 0; i < this.life; i++) {
+            life_img.onload(this.playground.width * (0.8 + i * 0.07), this.playground.height * 0.85, this.playground.width * 0.04);
         }
 
         this.render();
@@ -786,6 +791,230 @@ class Explain {
 }
 
 
+class Settings {
+    constructor(root) {
+        this.root = root;
+        this.username = "";
+        this.photo = "";
+
+        this.$settings = $(`
+<div class="game-settings">
+    <div class="game-settings-login">
+        <div class="game-settings-title">
+            登录
+        </div>
+        <div class="game-settings-username">
+            <div class="game-settings-item">
+                <input type="text" placeholder="用户名">
+            </div>
+        </div>
+        <div class="game-settings-password">
+            <div class="game-settings-item">
+                <input type="password" placeholder="密码">
+            </div>
+        </div>
+        <div class="game-settings-submit">
+            <div class="game-settings-item">
+                <button>登录</button>
+            </div>
+        </div>
+        <div class="game-settings-error-message">
+        </div>
+        <div class="game-settings-option">
+            注册
+        </div>
+        <br>
+    </div>
+    <div class="game-settings-register">
+        <div class="game-settings-title">
+            注册
+        </div>
+        <div class="game-settings-username">
+            <div class="game-settings-item">
+                <input type="text" placeholder="用户名">
+            </div>
+        </div>
+        <div class="game-settings-password game-settings-password-first">
+            <div class="game-settings-item">
+                <input type="password" placeholder="密码">
+            </div>
+        </div>
+        <div class="game-settings-password game-settings-password-second">
+            <div class="game-settings-item">
+                <input type="password" placeholder="确认密码">
+            </div>
+        </div>
+        <div class="game-settings-submit">
+            <div class="game-settings-item">
+                <button>注册</button>
+            </div>
+        </div>
+        <div class="game-settings-error-message">
+        </div>
+        <div class="game-settings-option">
+            登录
+        </div>
+        <br>
+    </div>
+</div>
+`);
+        this.$login = this.$settings.find(".game-settings-login");
+        this.$login_username = this.$login.find(".game-settings-username input");
+        this.$login_password = this.$login.find(".game-settings-password input");
+        this.$login_submit = this.$login.find(".game-settings-submit button");
+        this.$login_error_message = this.$login.find(".game-settings-error-message");
+        this.$login_register = this.$login.find(".game-settings-option");
+
+        this.$login.hide();
+
+        this.$register = this.$settings.find(".game-settings-register");
+        this.$register_username = this.$register.find(".game-settings-username input");
+        this.$register_password = this.$register.find(".game-settings-password-first input");
+        this.$register_password_confirm = this.$register.find(".game-settings-password-second input");
+        this.$register_submit = this.$register.find(".game-settings-submit button");
+        this.$register_error_message = this.$register.find(".game-settings-error-message");
+        this.$register_login = this.$register.find(".game-settings-option");
+
+        this.$register.hide();
+
+        this.root.$main_game.append(this.$settings);
+
+        this.start();
+    }
+
+    start() {
+        this.getinfo_web();
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        let outer = this;
+        this.add_listening_events_login();
+        this.add_listening_events_register();
+    }
+
+    add_listening_events_login() {
+        let outer = this;
+
+        this.$login_register.click(function () {
+            outer.register();
+        });
+        this.$login_submit.click(function () {
+            outer.login_on_remote();
+        });
+    }
+
+    add_listening_events_register() {
+        let outer = this;
+        this.$register_login.click(function () {
+            outer.login();
+        });
+        this.$register_submit.click(function () {
+            outer.register_on_remote();
+        });
+    }
+
+    login_on_remote() {  // 在远程服务器上登录
+        let outer = this;
+        let username = this.$login_username.val();
+        let password = this.$login_password.val();
+        this.$login_error_message.empty();
+
+        $.ajax({
+            url: "http://172.16.0.3:8000/settings/login/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+            },
+            success: function (resp) {
+                if (resp.result === "success") {
+                    location.reload();
+                } else {
+                    outer.$login_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+
+    register_on_remote() {  // 在远程服务器上注册
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
+        this.$register_error_message.empty();
+
+        $.ajax({
+            url: "http://172.16.0.3:8000/settings/register/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+                password_confirm: password_confirm,
+            },
+            success: function (resp) {
+                if (resp.result === "success") {
+                    location.reload();  // 刷新页面
+                } else {
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+
+    logout_on_remote() {  // 在远程服务器上登出
+        $.ajax({
+            url: "http://172.16.0.3:8000/settings/logout/",
+            type: "GET",
+            success: function (resp) {
+                if (resp.result === "success") {
+                    location.reload();
+                }
+            }
+        });
+    }
+
+    register() {  // 打开注册界面
+        this.$login.hide();
+        this.$register.show();
+    }
+
+    login() {  // 打开登录界面
+        this.$register.hide();
+        this.$login.show();
+    }
+
+    getinfo_web() {
+        let outer = this;
+
+        $.ajax({
+            url: "http://172.16.0.3:8000/settings/getinfo/",
+            type: "GET",
+            data: {
+                platform: outer.platform,
+            },
+            success: function (resp) {
+                if (resp.result === "success") {
+                    outer.username = resp.username;
+                    outer.photo = resp.photo;
+                    outer.score = resp.score;
+                    outer.hide();
+                    outer.root.menu.show();
+                } else {
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    hide() {
+        this.$settings.hide();
+    }
+
+    show() {
+        this.$settings.show();
+    }
+}
 class ProBar {
     constructor(root) {
         this.root = root;
@@ -842,12 +1071,13 @@ class ProBar {
 export class MainGame {
     constructor(id) {
         this.id = id;
-        this.$main_game = $('#'+id);
+        this.$main_game = $('#' + id);
+        this.settings = new Settings(this);
         this.menu = new GameMenu(this);
-       // this.probar = new ProBar(this);
+        // this.probar = new ProBar(this);
         this.playground = new PlayGround(this);
 
         this.start();
     }
-    start() {}
+    start() { }
 }

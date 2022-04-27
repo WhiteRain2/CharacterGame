@@ -16,14 +16,20 @@ class GameMenu {
         <div class="game-menu-field-item game-menu-field-item-explain">
             游戏说明
         </div>
+        <div class="game-menu-field-item game-menu-field-item-settings">
+            退出登录
+        </div>
     </div>
 </div>
 `);
         this.root.$main_game.append(this.$menu);
+        this.hide();
         this.$pass_mode = this.$menu.find('.game-menu-field-item-pass-mode');
         this.$audio = $("#back_audio")[0];
+        this.$audio.volume = 0.1;
         this.$grade_mode = this.$menu.find('.game-menu-field-item-grade-mode');
         this.$explain = this.$menu.find('.game-menu-field-item-explain');
+        this.$settings = this.$menu.find('.game-menu-field-item-settings');
         this.src = false;
         this.start();
     }
@@ -32,30 +38,32 @@ class GameMenu {
         this.add_listening_events();
     }
 
-
-
-   add_listening_events() {
-       let outer = this;
-       this.$menu.click(function(){
-           if (!outer.src) {
-               outer.$audio.volume = 0.1;
-               outer.$audio.play();
-               outer.src = true;
-           }
-       });
-       this.$pass_mode.click(function(){
-           outer.hide();
-           outer.pass_menu = new PassMode(outer);
-       });
-       this.$grade_mode.click(function(){
-           outer.hide();
-           outer.root.playground.show("grade");
-       });
-       this.$explain.click(function(){
-           outer.hide();
-           new Explain(outer.root);
-       });
-   }
+    add_listening_events() {
+        let outer = this;
+        this.$menu.click(function () {
+            if (!outer.src) {
+                outer.$audio.volume = 0.1;
+                outer.$audio.play();
+                outer.src = true;
+            }
+        });
+        this.$pass_mode.click(function () {
+            outer.hide();
+            outer.pass_menu = new PassMode(outer);
+        });
+        this.$grade_mode.click(function () {
+            outer.hide();
+            outer.root.playground.show("grade");
+        });
+        this.$explain.click(function () {
+            outer.hide();
+            new Explain(outer.root);
+        });
+        this.$settings.click(function () {
+            outer.hide();
+            outer.root.settings.logout_on_remote();
+        });
+    }
 
     show() {  // 显示menu界面
         this.$menu.show();
