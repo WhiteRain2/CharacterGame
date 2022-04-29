@@ -61,6 +61,87 @@ class PassMode {
         this.$pass_menu.remove();
     }
 }
+class More {
+    constructor(root) {
+        this.root = root;
+        this.$more = $(`
+        <div class="game-menu">
+           <div class="game-menu-field">
+                <div class="game-menu-field-item game-menu-field-item-list">
+                    排行榜
+                </div>
+                <br>
+                <div class="game-menu-field-item game-menu-field-item-remove">
+                    退出登录
+                </div>
+                <br>
+                <div class="game-menu-field-item game-menu-field-item-audio">
+                    开/关声音
+                </div>
+            </div>
+        </div>
+        `);
+        this.root.$main_game.append(this.$more);
+        this.$field = this.$more.find('.game-menu-field');
+        this.$list = this.$more.find('.game-menu-field-item-list');
+        this.$remove = this.$more.find('.game-menu-field-item-remove');
+        this.$close = this.$more.find('.game-menu-field-item-audio');
+        this.$audio = $("#back_audio")[0];
+        this.start();
+    }
+    start() {
+        this.add_listening_events();
+    }
+
+    ShowList() {
+        let outer = this;
+        $.ajax({
+            url: "http://172.16.0.3:8000/settings/getallInfo/",
+            type: "GET",
+            success: function (resp) {
+                outer.plays = resp.result;
+            }
+        });
+        if (!this.plays) return;
+        this.names = Object.keys(outer.plays).sort(function (a, b) {
+            return outer.plays[b] - outer.plays[a];
+        });
+        this.$field.hide();
+        this.$list_field = $(`
+    <div class="list"></div>
+    <div class="list_button">返回</div>
+        `);
+        this.$more.append(this.$list_field);
+        this.$list = this.$list_field.find('.list');
+        let i = 1;
+        for (var player in this.names) {
+            console.log(player);
+            var $item = $(`<div class="list-item">${i} ${player} ${this.plays[player]}</div>`);
+            this.$list.append($item);
+            i++;
+        }
+    }
+
+    add_listening_events() {
+        let outer = this;
+        this.$list.click(function () {
+            outer.ShowList();
+        });
+        this.$remove.click(function () {
+            outer.root.settings.logout_on_remote();
+        });
+        this.$close.click(function () {
+            if (!outer.$audio.paused) {
+                outer.$audio.pause();
+            }
+            else {
+                outer.$audio.play();
+            }
+        });
+    }
+}
+
+
 class GameMenu {
     constructor(root) {
         this.root = root;
@@ -79,8 +160,9 @@ class GameMenu {
         <div class="game-menu-field-item game-menu-field-item-explain">
             游戏说明
         </div>
+        <br>
         <div class="game-menu-field-item game-menu-field-item-settings">
-            退出登录
+            更多
         </div>
     </div>
 </div>
@@ -124,7 +206,7 @@ class GameMenu {
         });
         this.$settings.click(function () {
             outer.hide();
-            outer.root.settings.logout_on_remote();
+            new More(outer.root);
         });
     }
 
@@ -384,9 +466,24 @@ class Player extends GameObject {
         this.playground.$playground.mousedown(function (e) {
             if (outer.end) {
                 if (outer.end_buff > 180) {
-                    // outer.destroy();
-                    // outer.playground.root.menu.show();
-                    outer.playground.root.settings.score = outer.score;
+                    // save score
+                    let pre_score = outer.playground.root.settings.score;
+                    if (pre_score < outer.score) {
+                        $.ajax({
+                            url: "http://172.16.0.3:8000/settings/modify/",
+                            type: "GET",
+                            data: {
+                                score: outer.score,
+                            },
+                            success: function (resp) {
+                                if (resp.result === "success") {
+                                    location.reload();
+                                } else {
+                                    outer.$login_error_message.html(resp.result);
+                                }
+                            }
+                        });
+                    }
                     location.reload();
                 }
                 return;
@@ -963,6 +1060,7 @@ class Settings {
     }
 
     logout_on_remote() {  // 在远程服务器上登出
+        let outer = this;
         $.ajax({
             url: "http://172.16.0.3:8000/settings/logout/",
             type: "GET",
@@ -990,9 +1088,6 @@ class Settings {
         $.ajax({
             url: "http://172.16.0.3:8000/settings/getinfo/",
             type: "GET",
-            data: {
-                platform: outer.platform,
-            },
             success: function (resp) {
                 if (resp.result === "success") {
                     outer.username = resp.username;

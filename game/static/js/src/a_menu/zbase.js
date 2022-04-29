@@ -16,8 +16,9 @@ class GameMenu {
         <div class="game-menu-field-item game-menu-field-item-explain">
             游戏说明
         </div>
+        <br>
         <div class="game-menu-field-item game-menu-field-item-settings">
-            退出登录
+            更多
         </div>
     </div>
 </div>
@@ -61,7 +62,7 @@ class GameMenu {
         });
         this.$settings.click(function () {
             outer.hide();
-            outer.root.settings.logout_on_remote();
+            new More(outer.root);
         });
     }
 

@@ -8,5 +8,8 @@ class Player(models.Model):
     openid = models.CharField(default="", max_length=50, blank=True, null=True)
     score = models.IntegerField(default=0)
 
+    def set_score(self, score):
+        self.score = score
+
     def __str__(self):
         return str(self.user)

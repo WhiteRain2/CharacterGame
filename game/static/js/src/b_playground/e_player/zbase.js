@@ -66,9 +66,24 @@ class Player extends GameObject {
         this.playground.$playground.mousedown(function (e) {
             if (outer.end) {
                 if (outer.end_buff > 180) {
-                    // outer.destroy();
-                    // outer.playground.root.menu.show();
-                    outer.playground.root.settings.score = outer.score;
+                    // save score
+                    let pre_score = outer.playground.root.settings.score;
+                    if (pre_score < outer.score) {
+                        $.ajax({
+                            url: "http://172.16.0.3:8000/settings/modify/",
+                            type: "GET",
+                            data: {
+                                score: outer.score,
+                            },
+                            success: function (resp) {
+                                if (resp.result === "success") {
+                                    location.reload();
+                                } else {
+                                    outer.$login_error_message.html(resp.result);
+                                }
+                            }
+                        });
+                    }
                     location.reload();
                 }
                 return;

@@ -170,6 +170,7 @@ class Settings {
     }
 
     logout_on_remote() {  // 在远程服务器上登出
+        let outer = this;
         $.ajax({
             url: "http://172.16.0.3:8000/settings/logout/",
             type: "GET",
@@ -197,9 +198,6 @@ class Settings {
         $.ajax({
             url: "http://172.16.0.3:8000/settings/getinfo/",
             type: "GET",
-            data: {
-                platform: outer.platform,
-            },
             success: function (resp) {
                 if (resp.result === "success") {
                     outer.username = resp.username;
