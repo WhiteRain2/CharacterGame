@@ -1,6 +1,6 @@
 #! /bin/bash
 
-JS_PATH=/home/wy/myapp/game/static/js/
+JS_PATH=/home/ms/CharacterGame/game/static/js/
 JS_PATH_DIST=${JS_PATH}dist/
 JS_PATH_SRC=${JS_PATH}src/
 

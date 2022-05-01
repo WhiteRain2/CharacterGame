@@ -1,3 +1,10 @@
+@font-face {
+    font-family: myfont;
+    src: url('/static/material/font/font.ttf'),
+        url('/static/material/font/font.ttf'),
+        url('/static/material/font/font.ttf');
+}
+
 /* settings */
 .game-settings {
     width: 100%;
@@ -22,6 +29,7 @@
 .game-settings-title {
     color: black;
     font-size: 3vh;
+    font-family: myfont;
     text-align: center;
     padding-top: 2vh;
     margin-bottom: 2vh;
@@ -110,6 +118,7 @@
 .score-list-title {
     font-size: 60px;
     font-weight: 500;
+    font-family: myfont;
     font-style: italic;
 }
 
@@ -178,14 +187,6 @@
     top: 35%;
     left: 60%;
 }
-
-@font-face {
-    font-family: myfont;
-    src: url('/static/material/font/font.ttf'),
-        url('/static/material/font/font.ttf'),
-        url('/static/material/font/font.ttf');
-}
-
 
 .game-menu-field-item {
     background-image: url('/static/material/images/ItemBack.png');

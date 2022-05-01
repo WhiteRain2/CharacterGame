@@ -47,7 +47,7 @@ class More {
     ShowList() {
         let outer = this;
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/getallInfo/",
+            url: "http://8.130.98.108/settings/getallInfo/",
             type: "GET",
             success: function (resp) {
                 outer.plays = resp.result;

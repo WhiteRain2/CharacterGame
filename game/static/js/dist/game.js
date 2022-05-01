@@ -110,7 +110,7 @@ class More {
     ShowList() {
         let outer = this;
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/getallInfo/",
+            url: "http://8.130.98.108/settings/getallInfo/",
             type: "GET",
             success: function (resp) {
                 outer.plays = resp.result;
@@ -498,7 +498,7 @@ class Player extends GameObject {
                     let pre_score = outer.playground.root.settings.score;
                     if (pre_score < outer.score) {
                         $.ajax({
-                            url: "http://172.16.0.3:8000/settings/modify/",
+                            url: "http://8.130.98.108/settings/modify/",
                             type: "GET",
                             data: {
                                 score: outer.score,
@@ -1046,7 +1046,7 @@ class Settings {
         this.$login_error_message.empty();
 
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/login/",
+            url: "http://8.130.98.108/settings/login/",
             type: "GET",
             data: {
                 username: username,
@@ -1070,7 +1070,7 @@ class Settings {
         this.$register_error_message.empty();
 
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/register/",
+            url: "http://8.130.98.108/settings/register/",
             type: "GET",
             data: {
                 username: username,
@@ -1090,7 +1090,7 @@ class Settings {
     logout_on_remote() {  // 在远程服务器上登出
         let outer = this;
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/logout/",
+            url: "http://8.130.98.108/settings/logout/",
             type: "GET",
             success: function (resp) {
                 if (resp.result === "success") {
@@ -1114,7 +1114,7 @@ class Settings {
         let outer = this;
 
         $.ajax({
-            url: "http://172.16.0.3:8000/settings/getinfo/",
+            url: "http://8.130.98.108/settings/getinfo/",
             type: "GET",
             success: function (resp) {
                 if (resp.result === "success") {

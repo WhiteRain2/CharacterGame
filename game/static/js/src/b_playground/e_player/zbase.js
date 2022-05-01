@@ -70,7 +70,7 @@ class Player extends GameObject {
                     let pre_score = outer.playground.root.settings.score;
                     if (pre_score < outer.score) {
                         $.ajax({
-                            url: "http://172.16.0.3:8000/settings/modify/",
+                            url: "http://8.130.98.108/settings/modify/",
                             type: "GET",
                             data: {
                                 score: outer.score,
