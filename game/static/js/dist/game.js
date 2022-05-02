@@ -76,16 +76,18 @@ class More {
                 </div>
                 <br>
                 <div class="game-menu-field-item game-menu-field-item-audio">
-                    开/关声音
+                    声音设置
                 </div>
                 <div class="game-menu-field-item game-menu-field-item-back">
                     返回
                 </div>
-            </div>        
+            </div>
             <div class="score-list">
-                <div class="score-list-title">积分榜</div>
+                <div class="score-list-title">汉字风云榜</div>
                 <div class="score-list-every"></div>
-                <div class="score-list-back">返回</div>
+                <div class="score-list-prev score-list-button">上一页</div>
+                <div class="score-list-back score-list-button">返回</div>
+                <div class="score-list-next score-list-button">下一页</div>
             </div>
         </div>
             `);
@@ -100,6 +102,8 @@ class More {
         this.$close = this.$more.find('.game-menu-field-item-audio');
         this.$List = this.$more.find('.score-list-every');
         this.$list_back = this.$more.find('.score-list-back');
+        this.$prev = this.$more.find('.score-list-prev');
+        this.$next = this.$more.find('.score-list-next');
         this.$audio = $("#back_audio")[0];
         this.start();
     }
@@ -133,7 +137,13 @@ class More {
             );
             this.$List.append($item);
         }
-        this.add_listening_events_back();
+        this.list_items = outer.$List.children();
+        this.list_ct = this.list_items.length;
+        this.$List.empty();
+        for (var i=0; i<8; i++) {
+            this.$List.append(this.list_items[i]);
+        }
+        this.add_listening_events_back(8);
     }
 
     add_listening_events() {
@@ -159,8 +169,27 @@ class More {
         });
     }
 
-    add_listening_events_back() {
+    add_listening_events_back(k) {
         let outer = this;
+        let j = 1;
+        this.$prev.click(function () {
+            console.log(j);
+            if (j === 0) return;
+            outer.$List.empty();
+            for (let i=k*(j-1); i < Math.min(outer.list_ct, k*j); i++) {
+                console.log(`i==${i}`);
+                outer.$List.append(outer.list_items[i]);
+            }
+            j --;
+        });
+        this.$next.click(function () {
+            if (k*j >= outer.list_ct) return;
+            outer.$List.empty();
+            for (let i=k*j; i < Math.max(outer.list_ct, k*(j+1)); i++) {
+                outer.$List.append(outer.list_items[i]);
+            }
+            j ++;
+        });
         this.$list_back.click(function () {
             outer.$List.empty();
             outer.$list_field.hide();
@@ -703,6 +732,7 @@ class Word extends GameObject{
     constructor(playground, x, y, w, h, speed, mode, id) {
         super();
         this.playground = playground;
+        this.player = this.playground.player;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -724,6 +754,9 @@ class Word extends GameObject{
         this.id = id;
         this.end = false;
         this.dt = 0;
+        this.bug = 0;
+        this.k = 0;
+        this.tmPos = [[0, 0], [1, 1]];
     }
 
     start() {
@@ -773,6 +806,15 @@ class Word extends GameObject{
     }
 
     update() {
+        let px = this.player.x
+        let py = this.player.y;
+        this.tmPos[this.k] = [px, py];
+        if (this.k === 1) this.k = 0;
+        else this.k = 1;
+        console.log(this.tmPos);
+        if (Math.abs(this.tmPos[0][0] - this.tmPos[1][0]) <= this.eps  && Math.abs(this.tmPos[0][1] - this.tmPos[1][1]) <= this.eps) {
+            this.bug += this.timedelta / 1000;
+        }
         if (this.end) {
             this.vx = this.vy = 0;
             this.w *= 1.005;
@@ -786,9 +828,15 @@ class Word extends GameObject{
             if (this.move_length < this.eps) {
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                let tx = Math.random() * this.playground.width;
-                let ty = Math.random() * this.playground.height;
-                this.move_to(tx, ty);
+                if (this.bug > 5) {
+                    this.bug = 0;
+                    this.move_to(px, py);
+                }
+                else {
+                    let tx = Math.random() * this.playground.width;
+                    let ty = Math.random() * this.playground.height;
+                    this.move_to(tx, ty);
+                }
             }
             let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
             this.x += this.vx * moved;

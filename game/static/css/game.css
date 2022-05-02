@@ -128,7 +128,7 @@
 }
 
 .list-item {
-    margin: 2%;
+    margin: 0.5%;
 }
 
 .list-item-every {
@@ -147,7 +147,7 @@
     right: 10%;
 }
 
-.score-list-back {
+.score-list-button {
     background-image: url('/static/material/images/ItemBack.png');
     background-size: 100% 100%;
     color: black;
@@ -156,16 +156,17 @@
     font-size: 4.5vh;
     font-style: italic;
     font-family: myfont;
+    display:inline;
     padding: 2vh;
+    margin: 8vw;
     text-align: center;
     /* background-color: rgba(39, 21, 28, 0.5);*/
     border-radius: 10px;
     letter-spacing: 0.5vw;
-    margin-left: 41%;
     cursor: pointer;
 }
 
-.score-list-back:hover {
+.score-list-button:hover {
     transform: scale(1.2);
     transition: 100ms;
     cursor: url('/static/material/images/me.ico'), default;

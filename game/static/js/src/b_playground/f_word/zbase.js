@@ -2,6 +2,7 @@ class Word extends GameObject{
     constructor(playground, x, y, w, h, speed, mode, id) {
         super();
         this.playground = playground;
+        this.player = this.playground.player;
         this.x = x;
         this.y = y;
         this.w = w;
@@ -23,6 +24,9 @@ class Word extends GameObject{
         this.id = id;
         this.end = false;
         this.dt = 0;
+        this.bug = 0;
+        this.k = 0;
+        this.tmPos = [[0, 0], [1, 1]];
     }
 
     start() {
@@ -72,6 +76,15 @@ class Word extends GameObject{
     }
 
     update() {
+        let px = this.player.x
+        let py = this.player.y;
+        this.tmPos[this.k] = [px, py];
+        if (this.k === 1) this.k = 0;
+        else this.k = 1;
+        console.log(this.tmPos);
+        if (Math.abs(this.tmPos[0][0] - this.tmPos[1][0]) <= this.eps  && Math.abs(this.tmPos[0][1] - this.tmPos[1][1]) <= this.eps) {
+            this.bug += this.timedelta / 1000;
+        }
         if (this.end) {
             this.vx = this.vy = 0;
             this.w *= 1.005;
@@ -85,9 +98,15 @@ class Word extends GameObject{
             if (this.move_length < this.eps) {
                 this.move_length = 0;
                 this.vx = this.vy = 0;
-                let tx = Math.random() * this.playground.width;
-                let ty = Math.random() * this.playground.height;
-                this.move_to(tx, ty);
+                if (this.bug > 5) {
+                    this.bug = 0;
+                    this.move_to(px, py);
+                }
+                else {
+                    let tx = Math.random() * this.playground.width;
+                    let ty = Math.random() * this.playground.height;
+                    this.move_to(tx, ty);
+                }
             }
             let moved = Math.min(this.move_length, this.speed * this.timedelta / 1000);
             this.x += this.vx * moved;
